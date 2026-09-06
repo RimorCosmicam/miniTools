@@ -236,7 +236,11 @@ private fun RecentsPage(prefs: Prefs, granted: Boolean, onChange: () -> Unit) {
     MontRow(label = "Opened by", value = summary(prefs, Action.RECENTS), enabled = false)
     MontGap()
     MontRow(label = "Repair the interface", value = "run") { Recents.repair(context) }
-    MontDetail("Auto-rotate leaves Samsung's launcher holding the insets it saved while the panel was sideways, and every switcher after that is laid out against them. This starts the switcher once on the inner display, which writes upright insets over them. Nothing appears; the inner panel stays off.")
+    MontDetail("Rotating leaves Samsung's launcher holding the insets it saved while the panel was sideways. This writes upright ones over them from the inner display — nothing appears, and that panel stays off. Right shape, but it sits a little low.")
+    MontRow(label = "Restart the launcher", value = "exact") {
+        Recents.openLauncherAppInfo(context, CoverDisplay.idOrDefault(context))
+    }
+    MontDetail("Force stop, on the page this opens. Only the launcher's own start-up puts the insets back exactly, and force-stopping another app is not something miniTools is allowed to do.")
     MontGap()
     MontDetail("One UI's own task switcher, put on the cover screen at the panel's native density. The list is rebuilt on every open, so what you used last is where it should be.")
 }

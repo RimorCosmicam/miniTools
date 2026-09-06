@@ -68,6 +68,32 @@ object Recents {
         false
     }
 
+    /**
+     * The exact repair, which is not ours to perform.
+     *
+     * Only the launcher's own start-up recomputes the cover's insets correctly — boot does it,
+     * and so does a force-stop. Nothing an ordinary app can reach reproduces it: not a density
+     * change, not a virtual display at the same size, not restarting the switcher. Force-stopping
+     * another package needs a signature permission.
+     *
+     * So miniTools opens the page where the button lives and lets the user press it.
+     */
+    fun openLauncherAppInfo(context: Context, displayId: Int): Boolean = try {
+        val options = ActivityOptions.makeBasic().apply { launchDisplayId = displayId }
+        context.startActivity(
+            Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(android.net.Uri.fromParts("package", LAUNCHER_PACKAGE, null))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            options.toBundle(),
+        )
+        true
+    } catch (e: Exception) {
+        Log.w(TAG, "could not open the launcher's app info", e)
+        false
+    }
+
+    private const val LAUNCHER_PACKAGE = "com.sec.android.app.launcher"
+
     private fun intent() = Intent(Intent.ACTION_MAIN).apply {
         component = COMPONENT
         addCategory(Intent.CATEGORY_DEFAULT)

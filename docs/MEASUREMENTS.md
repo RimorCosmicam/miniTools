@@ -229,7 +229,32 @@ out against that.
 It survives a launcher restart, which is what makes it look unfixable: the value
 is not in the launcher's process. It does not survive a reboot.
 
-**The repair.** Start the switcher once on display 0. That is the only display
+### What boot does that nothing else does
+
+Catching the launcher starting up shows the whole mechanism:
+
+```
+isValidWindowInsets: true
+updateInsetsData, rotation: 0, isPort: true, insets: {left=0, top=109, right=0, bottom=126}
+isValidWindowInsets: false
+updateInsetsData, rotation: 0, isPort: true, insets: {left=0, top=0,   right=0, bottom=220}
+```
+
+There are two paths, not one. When insets are readable it uses them; when they
+are not — the cover, always — `updateInsetsData` still runs and **computes the
+right answer from the cutout**: `bottom=220`, exactly what the panel needs.
+
+So the correct value is derivable at runtime. It is simply only derived during
+the launcher's own start-up. A force-stop re-runs it and repairs the switcher
+exactly. Nothing an ordinary app can reach does: a density change on the cover
+produces only `Use savedInsets`, a virtual display at the same size and density
+reports valid insets but its values are never persisted, and restarting the
+switcher does not help because the switcher is not what computes them.
+
+Force-stopping another package needs a signature permission, so the exact repair
+stays a thing the user performs. miniTools opens the page with the button on it.
+
+**The approximate repair.** Start the switcher once on display 0. That is the only display
 where insets are ever valid, so it rewrites the saved value with an upright one.
 This phone has no inner panel at all — display 0 is permanently `state OFF` — and
 starting an activity there neither wakes it nor disturbs the cover screen, so the
