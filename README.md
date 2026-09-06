@@ -22,9 +22,11 @@ Built for the Galaxy Z Flip 7 FlexWindow. It runs there and nowhere else.
 
 ## The gestures
 
-**Bottom-left corner, swipe up.** The bottom centre is where Samsung Pay lives
-and it stays Samsung Pay's. The strip is 280px wide — 30% of the panel — and it
-is the only part of the edge miniTools claims.
+**Bottom-left corner, swipe up.** Everything to the left of the back button, and
+nothing else. The cover navigation bar's buttons are centred on the strip beside
+the camera island rather than on the panel, which puts back's slot at x 90 — so
+the zone stops at 88 and the bottom centre stays Samsung Pay's. That is 88px of
+a 948px edge.
 
 **The flash, pressed and held.** The camera island is a cutout in the *display*,
 not in the digitiser: the panel keeps reporting touches under it even though

@@ -41,12 +41,21 @@ object Zones {
     val FLASH = Zone(left = 416, top = 868, right = 560, bottom = 1048)
 
     /**
-     * The bottom-left corner, for the swipe up.
+     * The bottom-left corner, for the swipe up — and nothing else's.
      *
-     * Kept narrow and hard to the left because the bottom centre belongs to Samsung Pay, and a
-     * strip that reached the middle would eat it. 280px is 30% of the panel's width.
+     * The cover navigation bar is `Rect(0, 938 - 948, 1048)`, and its two buttons are not centred
+     * on the panel: they are centred on the strip left of the camera island, at x 236. Back sits
+     * at 163 and home at 310, 147 apart, so back's slot begins at x 90.
+     *
+     * The zone therefore stops at 88. Everything to the left of back is free — with the
+     * navigation bar showing or without it — and everything from 90 rightwards belongs to
+     * buttons somebody is trying to press. The first version of this reached to 280 and swallowed
+     * back whole.
+     *
+     * It runs taller than the navigation bar to give the swipe somewhere to travel: 148px of
+     * height against a 48px threshold.
      */
-    val CORNER = Zone(left = 0, top = 952, right = 280, bottom = 1048)
+    val CORNER = Zone(left = 0, top = 900, right = 88, bottom = 1048)
 
     /** How far up a finger must travel inside [CORNER] before it counts as a swipe. */
     const val SWIPE_THRESHOLD_PX: Int = 48

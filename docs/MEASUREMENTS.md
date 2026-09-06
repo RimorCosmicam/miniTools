@@ -96,9 +96,38 @@ can be given this rectangle.
 (100, 997) and (95, 966)
 ```
 
-Zone shipped: **(0, 952) – (280, 1048)**. Narrow and hard to the left so that the
-bottom centre stays available to Samsung Pay. A swipe must travel 48px upward
-within 600ms to count.
+Zone shipped: **(0, 900) – (88, 1048)**. A swipe must travel 48px upward within
+600ms to count.
+
+The first version of this reached to x 280 and swallowed the back button whole,
+which is what forced the navigation bar to be measured rather than assumed:
+
+```
+NavigationBar1  frame=Rect(0, 938 - 948, 1048)   height 110
+```
+
+Its buttons are **not** centred on the panel. They are centred on the strip left
+of the camera island — back at x 163, home at x 310, 147 apart, symmetric about
+x 236, which is the middle of 0..473. Back's slot therefore begins at **x 90**.
+
+So the free corner is x 0..90, with or without the bar showing, and the zone
+stops at 88. It runs up to y 900 — taller than the bar — only so the swipe has
+somewhere to travel.
+
+## Other apps already in these places
+
+Both zones are already claimed by third-party cover-screen apps on this phone,
+which is a good sign about the design and a real source of conflict:
+
+```
+apps.ijp.coverrecents          frame=Rect(0, 968 - 300, 1048)     the same corner
+apps.ijp.coverscreen.launcher  frame=Rect(419, 861 - 559, 981)    the same flash
+```
+
+Whichever window is higher in the z-order takes the touch. miniTools currently
+sits above both, so it wins, but nothing guarantees that ordering and two apps
+racing for one rectangle is not a state either of them can resolve. If the
+gestures ever stop responding, this is the first thing to look at.
 
 `ZonesTest` asserts that every tap above still lands in the zone it was measured
 from, that neither zone runs off the panel, that they do not overlap, and that

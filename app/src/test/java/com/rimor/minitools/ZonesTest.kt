@@ -19,7 +19,13 @@ class ZonesTest {
         464 to 964, 483 to 958, 493 to 926,
     )
 
-    private val cornerTaps = listOf(100 to 997, 95 to 966)
+    /**
+     * Where the cover navigation bar's buttons are. The bar is Rect(0, 938 - 948, 1048) and its
+     * two buttons are centred on the strip left of the camera island rather than on the panel:
+     * back at 163, home at 310, 147 apart. Back's slot therefore begins at x 90.
+     */
+    private val backButtonLeftEdge = 90
+    private val navButtonCentres = listOf(163 to 996, 310 to 996)
 
     @Test
     fun `flash zone contains every measured flash tap`() {
@@ -28,11 +34,30 @@ class ZonesTest {
         }
     }
 
+    /**
+     * The reason the zone is narrow. Reaching to 280 swallowed the back button whole, and a
+     * gesture strip that eats the system's own back is worse than no gesture strip.
+     */
     @Test
-    fun `corner zone contains every measured corner tap`() {
-        cornerTaps.forEach { (x, y) ->
-            assertTrue("corner tap ($x, $y) fell outside the zone", Zones.CORNER.contains(x, y))
+    fun `corner zone never touches a navigation bar button`() {
+        navButtonCentres.forEach { (x, y) ->
+            assertFalse("corner zone covers the nav button at ($x, $y)", Zones.CORNER.contains(x, y))
         }
+        assertTrue(
+            "corner zone must end before back's slot begins at x $backButtonLeftEdge",
+            Zones.CORNER.right < backButtonLeftEdge,
+        )
+    }
+
+    /** It still has to be swipeable: enough height for the threshold, and it reaches the edge. */
+    @Test
+    fun `corner zone can hold the swipe it asks for`() {
+        assertTrue(
+            "not enough travel for a ${Zones.SWIPE_THRESHOLD_PX}px threshold",
+            Zones.CORNER.height > Zones.SWIPE_THRESHOLD_PX * 2,
+        )
+        assertTrue("must reach the bottom edge", Zones.CORNER.bottom == CoverDisplay.HEIGHT_PX)
+        assertTrue("must reach the left edge", Zones.CORNER.left == 0)
     }
 
     /**
