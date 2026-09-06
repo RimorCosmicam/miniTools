@@ -93,6 +93,7 @@ class ToolsService : AccessibilityService() {
         if (!prefs.densityApplied) return
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
+        android.util.Log.i("miniToolsWin", "pkg=$pkg cls=${event.className} seen=$switcherSeen")
         if (pkg == RECENTS_PACKAGE) {
             switcherSeen = true
         } else if (switcherSeen) {
