@@ -210,9 +210,27 @@ class ToolsService : AccessibilityService() {
     }
 
     private fun openRecents() {
-        // Before the start, never after: the switcher is built fresh on every open and reads the
-        // density that is in force at the moment it is created.
-        applyDensity()
+        // Rotation comes off first, and stays off.
+        //
+        // Rotating while the switcher is open corrupts Samsung's launcher permanently: the cards
+        // keep rendering against the wrong geometry afterwards and nothing brings them back but
+        // restarting the launcher, which an ordinary app cannot do — am kill will not touch it,
+        // because it is the home process. Since the damage cannot be repaired it has to be
+        // avoided, so the switcher is never allowed to be on screen while the panel can turn.
+        //
+        // Two taps puts rotation back. That is deliberate: an automatic restore would have to
+        // guess when the switcher closed, and this is the exact guess that has already proved
+        // unreliable — the cover home announces itself from behind the switcher while it is still
+        // in use.
+        dropRotation()
+
+        // The switcher opens at the panel's own density, every single time.
+        //
+        // Not "assume there is no override" — clear one. An override left behind by anything at
+        // all, an earlier build, a crash, an experiment, makes the cards the wrong size against
+        // thumbnails captured at another one, and the result reads as a broken switcher rather
+        // than as a setting somebody forgot to put back.
+        forceNativeDensity()
         val displayId = coverDisplay?.displayId ?: Display.DEFAULT_DISPLAY
         if (!Recents.open(this, displayId)) {
             // The launcher would not take the explicit start. The global action is coarser — it
@@ -235,6 +253,11 @@ class ToolsService : AccessibilityService() {
         host.show { MiniToolsTheme { LauncherOverlay(onDismiss = { host.dismiss() }) } }
     }
 
+    private fun dropRotation() {
+        val display = coverDisplay ?: return
+        if (Rotation.isOn) Rotation.disable(this, display)
+    }
+
     private fun toggleRotation() {
         val display = coverDisplay ?: return
         val on = Rotation.toggle(this, display)
@@ -248,25 +271,16 @@ class ToolsService : AccessibilityService() {
     }
 
     /**
-     * Set the density before the switcher is started, never after.
+     * Put the cover panel back to its own density and leave it there.
      *
-     * The switcher is started with CLEAR_TASK, so it is built fresh every time — and a fresh
-     * activity reads the density that is in force when it is created. That is what makes this
-     * work without force-stopping Samsung's launcher, which declares keepalive.density=true and
-     * would otherwise carry its old layout straight through the change.
+     * Cheap, idempotent, and a no-op without the permission — in which case there was never an
+     * override of ours to clear anyway.
      */
-    private fun applyDensity() {
-        val display = coverDisplay ?: return
-        val density = prefs.switcherDensity
-        if (density <= 0 || !Density.permitted(this)) return
-        if (Density.apply(this, display.displayId, density)) {
-            prefs.densityApplied = true
-            switcherSeen = false
-            // A launch that never lands would otherwise leave the panel at the wrong density
-            // until something else happened to put it back.
-            handler.removeCallbacks(giveUp)
-            handler.postDelayed(giveUp, GIVE_UP_MS)
-        }
+    private fun forceNativeDensity() {
+        val displayId = coverDisplay?.displayId ?: return
+        if (!Density.permitted(this)) return
+        Density.restore(this, displayId)
+        prefs.densityApplied = false
     }
 
     private fun restoreDensity() {
