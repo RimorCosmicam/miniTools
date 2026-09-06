@@ -171,6 +171,9 @@ class ToolsService : AccessibilityService() {
 
     private fun fire() {
         if (prefs.haptics) tick()
+        // Before the start, never after: the switcher is built fresh on every open and reads the
+        // density that is in force at the moment it is created.
+        applyDensity()
         val displayId = coverDisplay?.displayId ?: Display.DEFAULT_DISPLAY
         if (!Recents.open(this, displayId)) {
             // The launcher would not take the explicit start. The global action is coarser — it
