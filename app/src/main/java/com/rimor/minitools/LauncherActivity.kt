@@ -160,7 +160,7 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
                 state = grid,
                 modifier = Modifier.fillMaxSize(),
             ) {
-                items(apps, key = { it.packageName }) { app ->
+                items(apps, key = { "${it.packageName}/${it.activityName}" }) { app ->
                     AppCell(
                         app = app,
                         starred = app.packageName in favourites,

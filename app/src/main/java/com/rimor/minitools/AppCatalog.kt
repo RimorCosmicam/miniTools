@@ -31,8 +31,11 @@ object AppCatalog {
     fun load(context: Context): List<LaunchableApp> {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val resolved: List<ResolveInfo> =
-            pm.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        // Flags 0, emphatically not MATCH_DEFAULT_ONLY. That flag keeps only activities whose
+        // filter declares CATEGORY_DEFAULT, and a launcher entry declares MAIN and LAUNCHER — it
+        // has no reason to declare DEFAULT and most do not. Asking for it silently returned a
+        // fraction of the phone's apps and looked like a visibility problem.
+        val resolved: List<ResolveInfo> = pm.queryIntentActivities(intent, 0)
         return resolved.mapNotNull { info ->
             val activity = info.activityInfo ?: return@mapNotNull null
             // miniTools does not list itself. A launcher that can launch the launcher it is
@@ -46,7 +49,7 @@ object AppCatalog {
                     pm.getPackageInfo(activity.packageName, 0).firstInstallTime
                 }.getOrDefault(0L),
             )
-        }.distinctBy { it.packageName }
+        }.distinctBy { it.packageName to it.activityName }
     }
 
     /**
