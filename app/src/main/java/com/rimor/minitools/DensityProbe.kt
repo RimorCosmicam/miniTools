@@ -26,7 +26,7 @@ object DensityProbe {
         lines += "WRITE_SECURE_SETTINGS granted=$granted"
 
         lines += "exemptions=" + runCatching { liftHiddenApiRestrictions() }
-            .fold({ "ok" }, { "failed: ${it.javaClass.simpleName}: ${it.message}" })
+            .fold({ "ok" }, { "failed: ${it.javaClass.simpleName}: ${it.cause ?: it.message}" })
 
         val wm = runCatching { windowManagerService() }
         if (wm.isFailure) {
@@ -35,6 +35,22 @@ object DensityProbe {
         }
         val service = wm.getOrNull()!!
         lines += "IWindowManager=${service.javaClass.name}"
+
+        // Is the method genuinely absent, or merely hidden from us? Enumerate and see.
+        val iface = Class.forName("android.view.IWindowManager")
+        val onIface = iface.methods.filter { it.name.contains("ensity") }
+        lines += "IWindowManager.methods total=${iface.methods.size}"
+        lines += "density methods on interface: " + (
+            onIface.joinToString("; ") { m ->
+                m.name + "(" + m.parameterTypes.joinToString(",") { it.simpleName } + ")"
+            }.ifEmpty { "NONE VISIBLE" }
+            )
+        val onProxy = service.javaClass.methods.filter { it.name.contains("ensity") }
+        lines += "density methods on proxy: " + (
+            onProxy.joinToString("; ") { m ->
+                m.name + "(" + m.parameterTypes.joinToString(",") { it.simpleName } + ")"
+            }.ifEmpty { "NONE VISIBLE" }
+            )
 
         lines += runCatching {
             val set: Method = service.javaClass.getMethod(
