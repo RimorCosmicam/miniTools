@@ -107,6 +107,7 @@ fun MontToggle(on: Boolean, enabled: Boolean = true) {
             .height(18.dp)
             .background(Mont.Track),
     ) {
+        // The white block fills one half...
         Box(
             modifier = Modifier
                 .width(28.dp)
@@ -114,19 +115,19 @@ fun MontToggle(on: Boolean, enabled: Boolean = true) {
                 .align(if (on) Alignment.CenterStart else Alignment.CenterEnd)
                 .background(if (enabled) Mont.Selected else Mont.Disabled),
         )
+        // ...and the state is written in the half it has left, never on top of it. The word
+        // names what the control currently is, not what pressing it would do.
         Text(
             text = if (on) "ON" else "OFF",
             style = Mont.toggle,
-            color = if (on) Color_Black else Mont.Primary,
+            color = if (enabled) Mont.Primary else Mont.Disabled,
             modifier = Modifier
-                .align(if (on) Alignment.CenterStart else Alignment.CenterEnd)
+                .align(if (on) Alignment.CenterEnd else Alignment.CenterStart)
                 .width(28.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }
 }
-
-private val Color_Black = androidx.compose.ui.graphics.Color.Black
 
 /** Thin over Black at one size. The contrast is the logo. */
 @Composable

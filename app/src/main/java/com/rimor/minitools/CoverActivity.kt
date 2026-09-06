@@ -11,8 +11,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -65,7 +67,13 @@ private fun Toolbox(onGrant: () -> Unit, onClose: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .windowInsetsPadding(WindowInsets.safeDrawing)
+            // Only the bottom and the sides. The cutout is the camera island and the
+            // navigation bar is real, but the status inset at the top is not wanted here — Mont
+            // supplies its own 44, and adding one to the other pushes the first row into the
+            // middle of the panel.
+            .windowInsetsPadding(
+                WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
+            )
             .verticalScroll(rememberScrollState())
             // 22 left, 14 right: text hangs off a generous left margin, and nothing needs the
             // right one. 44 at the top keeps the first row clear of the lip of a case.
