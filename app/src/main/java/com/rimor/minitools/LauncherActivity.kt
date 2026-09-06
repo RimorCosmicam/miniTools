@@ -31,17 +31,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * The launcher.
@@ -91,8 +93,17 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
     var menu by remember { mutableStateOf<Menu>(Menu.None) }
 
     LaunchedEffect(Unit) {
-        catalog = AppCatalog.load(context)
-        lastUsed = UsageAccess.lastUsed(context, prefs.ownLaunchTimes())
+        // Ninety packages out of the package manager, plus a usage-stats query across a month.
+        // Both are IPC, and on the main thread they are a visibly empty grid for as long as they
+        // take.
+        val loaded = withContext(Dispatchers.IO) {
+            val apps = AppCatalog.load(context)
+            val used = UsageAccess.lastUsed(context, prefs.ownLaunchTimes())
+            apps.forEach { IconCache.load(context, it.packageName) }
+            apps to used
+        }
+        catalog = loaded.first
+        lastUsed = loaded.second
     }
 
     val apps = remember(catalog, order, favourites, hidden, lastUsed) {
@@ -253,12 +264,8 @@ private fun AppCell(
     onHold: () -> Unit,
 ) {
     val context = LocalContext.current
-    val icon = remember(app.packageName) {
-        runCatching {
-            context.packageManager.getApplicationIcon(app.packageName)
-                .toBitmap(width = 144, height = 144)
-                .asImageBitmap()
-        }.getOrNull()
+    val icon by produceState<ImageBitmap?>(IconCache.cached(app.packageName), app.packageName) {
+        if (value == null) value = withContext(Dispatchers.IO) { IconCache.load(context, app.packageName) }
     }
     Column(
         modifier = Modifier
@@ -266,8 +273,9 @@ private fun AppCell(
             .padding(vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (icon != null) {
-            Image(bitmap = icon, contentDescription = app.label, modifier = Modifier.size(48.dp))
+        val bitmap = icon
+        if (bitmap != null) {
+            Image(bitmap = bitmap, contentDescription = app.label, modifier = Modifier.size(48.dp))
         } else {
             Box(Modifier.size(48.dp).background(Mont.Track))
         }
