@@ -20,7 +20,7 @@ import android.view.WindowManager
  * invisible, untouchable — whose only property that matters is `screenOrientation = SENSOR`.
  * Everything behind it then turns with the phone.
  *
- * The technique is CoverSpin's; it was worth reading rather than out-guessing.
+ * Inspired by CoverSpin.
  */
 object Rotation {
 

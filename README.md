@@ -107,9 +107,7 @@ a window of its own — zero by zero, invisible, untouchable — whose only
 meaningful property is `screenOrientation = SCREEN_ORIENTATION_SENSOR`.
 Everything behind it then turns with the phone.
 
-As an accessibility overlay this costs no permission at all. The technique is
-CoverSpin's, read out of its APK rather than guessed at — it holds no privileged
-permission of any kind, which is what gave the game away.
+As an accessibility overlay this costs no permission at all. Inspired by CoverSpin.
 
 ## The flash is a button
 
