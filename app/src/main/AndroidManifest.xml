@@ -4,11 +4,6 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Probe only, granted by hand over adb. Not part of the shipped design yet. -->
-    <uses-permission
-        android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
-
     <!--
       Optional, and the launcher works without it. It answers one sort order — "recent use" —
       and is granted in Settings rather than by a dialog; without it the grid falls back to the
