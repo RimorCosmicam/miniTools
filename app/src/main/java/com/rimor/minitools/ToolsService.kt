@@ -30,6 +30,8 @@ class ToolsService : AccessibilityService() {
     private var corner: View? = null
     private var flash: View? = null
 
+    private var launcher: OverlayHost? = null
+
     /** Whether the switcher has actually appeared since the density was set. */
     private var switcherSeen = false
 
@@ -68,6 +70,8 @@ class ToolsService : AccessibilityService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(giveUp)
+        launcher?.dismiss()
+        MontToast.dismiss()
         if (prefs.densityApplied) restoreDensity()
         listener?.let { prefs.stopObserving(it) }
         removeZone(corner); corner = null
@@ -193,17 +197,18 @@ class ToolsService : AccessibilityService() {
         }
     }
 
+    /**
+     * Over what you were doing, not instead of it. Starting the activity changed apps, which is
+     * the wrong shape entirely for something you open to reach a different app.
+     */
     private fun openLauncher() {
-        val options = android.app.ActivityOptions.makeBasic()
-            .apply { launchDisplayId = coverDisplay?.displayId ?: Display.DEFAULT_DISPLAY }
-        runCatching {
-            startActivity(
-                android.content.Intent(this, LauncherActivity::class.java)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK),
-                options.toBundle(),
-            )
+        val display = coverDisplay ?: return
+        val host = launcher ?: OverlayHost(this, display).also { launcher = it }
+        if (host.isShowing) {
+            host.dismiss()
+            return
         }
+        host.show { MiniToolsTheme { LauncherOverlay(onDismiss = { host.dismiss() }) } }
     }
 
     private fun toggleRotation() {
@@ -212,13 +217,10 @@ class ToolsService : AccessibilityService() {
         say(if (on) "Rotation On" else "Rotation Off")
     }
 
-    /** A toast, on the panel the gesture happened on rather than the one behind your hand. */
+    /** A word, on the panel the gesture happened on rather than the one behind your hand. */
     private fun say(text: String) {
         val display = coverDisplay ?: return
-        runCatching {
-            val ui = createDisplayContext(display)
-            android.widget.Toast.makeText(ui, text, android.widget.Toast.LENGTH_SHORT).show()
-        }
+        MontToast.show(this, display, text)
     }
 
     /**
