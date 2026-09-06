@@ -32,6 +32,18 @@ class ToolsService : AccessibilityService() {
 
     private var launcher: OverlayHost? = null
 
+    /**
+     * Apps come and go while the service is running, and a launcher showing yesterday's list is
+     * a launcher you stop trusting. Registered here rather than in the manifest because a
+     * long-lived service can hold a receiver the system would not otherwise deliver to.
+     */
+    private val packagesChanged = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: android.content.Intent) {
+            intent.data?.schemeSpecificPart?.let { IconCache.forget(it) }
+            LauncherWidgetProvider.refresh(this@ToolsService)
+        }
+    }
+
     /** Whether the switcher has actually appeared since the density was set. */
     private var switcherSeen = false
 
@@ -53,6 +65,17 @@ class ToolsService : AccessibilityService() {
             restoreDensity()
         }
 
+        registerReceiver(
+            packagesChanged,
+            android.content.IntentFilter().apply {
+                addAction(android.content.Intent.ACTION_PACKAGE_ADDED)
+                addAction(android.content.Intent.ACTION_PACKAGE_REMOVED)
+                addAction(android.content.Intent.ACTION_PACKAGE_REPLACED)
+                addAction(android.content.Intent.ACTION_PACKAGE_CHANGED)
+                addDataScheme("package")
+            },
+        )
+
         coverDisplay = CoverDisplay.find(this)
         val display = coverDisplay
         if (display == null) {
@@ -70,6 +93,7 @@ class ToolsService : AccessibilityService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(giveUp)
+        runCatching { unregisterReceiver(packagesChanged) }
         launcher?.dismiss()
         MontToast.dismiss()
         if (prefs.densityApplied) restoreDensity()

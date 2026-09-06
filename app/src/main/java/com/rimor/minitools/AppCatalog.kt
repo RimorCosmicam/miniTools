@@ -28,6 +28,14 @@ enum class SortOrder(val label: String) {
 
 object AppCatalog {
 
+    /**
+     * Every launchable activity on the phone, miniTools included.
+     *
+     * It used to exclude itself, which was right when the launcher was a screen you switched into
+     * — opening it from inside itself would have been a loop. Now that the launcher is a card
+     * drawn over whatever is already there, miniTools is just another place to go, and leaving it
+     * out only meant there was no way to reach its own settings from the panel you had open.
+     */
     fun load(context: Context): List<LaunchableApp> {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -38,9 +46,6 @@ object AppCatalog {
         val resolved: List<ResolveInfo> = pm.queryIntentActivities(intent, 0)
         return resolved.mapNotNull { info ->
             val activity = info.activityInfo ?: return@mapNotNull null
-            // miniTools does not list itself. A launcher that can launch the launcher it is
-            // inside is a loop with a picture of itself in it.
-            if (activity.packageName == context.packageName) return@mapNotNull null
             LaunchableApp(
                 packageName = activity.packageName,
                 activityName = activity.name,

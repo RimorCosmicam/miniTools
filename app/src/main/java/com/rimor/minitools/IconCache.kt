@@ -32,4 +32,9 @@ object IconCache {
     }
 
     fun cached(packageName: String): ImageBitmap? = cache[packageName]
+
+    /** An app that changed has a new icon as often as not, so the old one is dropped. */
+    fun forget(packageName: String) {
+        cache.remove(packageName)
+    }
 }
