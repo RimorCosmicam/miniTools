@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.safeDrawing
@@ -33,7 +32,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -111,14 +109,13 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onClose: () -> Unit) 
 
         Column(
             Modifier
-                .fillMaxWidth()
-                .align(Alignment.Center)
-                // The camera cutout and the navigation bar are real; the status inset is not
-                // wanted, because the card is centred rather than hung from the top.
+                .fillMaxSize()
+                // The camera cutout and the navigation bar are real; the status inset is not,
+                // because the card is inset from every edge rather than hung from the top.
                 .windowInsetsPadding(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
                 )
-                .padding(horizontal = 18.dp)
+                .padding(horizontal = 18.dp, vertical = 20.dp)
                 .background(Mont.Surface)
                 // 22 left, 18 right: text hangs off a generous left margin and nothing needs the
                 // right one.
@@ -127,11 +124,13 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onClose: () -> Unit) 
             MontWordmark(light = "mini", heavy = "Tools")
             MontGap(14)
 
-            // Capped, and it scrolls inside the cap. Without a ceiling the list decides whether
-            // the card still fits on the panel, and the panel is 399dp tall.
+            // The cap is the card, and the card is what the panel leaves after the cutout and
+            // the navigation bar have taken their share. The list scrolls inside it. Giving the
+            // list a fixed ceiling instead cut a row through the middle and left mustard below
+            // it, which reads as a fault rather than as more list.
             Column(
                 Modifier
-                    .heightIn(max = 186.dp)
+                    .weight(1f)
                     .verticalScroll(rememberScrollState()),
             ) {
                 MontRow(label = "Recents", value = if (live) "on" else "off", enabled = granted)
