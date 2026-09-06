@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 
 /**
  * The toolbox.
@@ -41,7 +42,29 @@ class CoverActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { MiniToolsTheme { Toolbox(::openAccessibilitySettings, ::finish) } }
+        setContent {
+            MiniToolsTheme {
+                val prefs = remember { Prefs(this) }
+                // Re-read on every resume: this screen is most often come back to from the
+                // Accessibility settings the grant row just opened.
+                var granted by remember { mutableStateOf(isServiceEnabled(this)) }
+                LifecycleResumeEffect(Unit) {
+                    granted = isServiceEnabled(this@CoverActivity)
+                    onPauseOrDispose { }
+                }
+                var onboarded by remember { mutableStateOf(prefs.onboarded) }
+
+                if (onboarded) {
+                    Toolbox(granted, ::openAccessibilitySettings, ::finish)
+                } else {
+                    Welcome(
+                        granted = granted,
+                        onGrant = ::openAccessibilitySettings,
+                        onFinished = { prefs.onboarded = true; onboarded = true },
+                    )
+                }
+            }
+        }
     }
 
     private fun openAccessibilitySettings() {
@@ -52,7 +75,7 @@ class CoverActivity : ComponentActivity() {
 }
 
 @Composable
-private fun Toolbox(onGrant: () -> Unit, onClose: () -> Unit) {
+private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
 
@@ -60,8 +83,7 @@ private fun Toolbox(onGrant: () -> Unit, onClose: () -> Unit) {
     var flash by remember { mutableStateOf(prefs.flashPress) }
     var haptics by remember { mutableStateOf(prefs.haptics) }
 
-    val granted = remember { mutableStateOf(isServiceEnabled(context)) }
-    val live = granted.value && (corner || flash)
+    val live = granted && (corner || flash)
 
     Column(
         modifier = Modifier
@@ -82,16 +104,16 @@ private fun Toolbox(onGrant: () -> Unit, onClose: () -> Unit) {
         MontWordmark(light = "mini", heavy = "Tools")
         MontGap(22)
 
-        MontRow(label = "Recents", value = if (live) "on" else "off", enabled = granted.value)
+        MontRow(label = "Recents", value = if (live) "on" else "off", enabled = granted)
         MontDetail("One UI's own task switcher, put on the cover screen at its native density.")
         MontGap()
 
-        MontToggleRow(label = "Corner swipe", on = corner, enabled = granted.value) {
+        MontToggleRow(label = "Corner swipe", on = corner, enabled = granted) {
             corner = it; prefs.cornerSwipe = it
         }
         MontDetail("Swipe up from the bottom-left. The centre stays Samsung Pay's.")
 
-        MontToggleRow(label = "Flash press", on = flash, enabled = granted.value) {
+        MontToggleRow(label = "Flash press", on = flash, enabled = granted) {
             flash = it; prefs.flashPress = it
         }
         MontDetail("Press and hold the flash. The camera island is a cutout in the display, not in the digitiser.")
@@ -101,12 +123,12 @@ private fun Toolbox(onGrant: () -> Unit, onClose: () -> Unit) {
         MontRow(label = "Quick settings", value = "—", enabled = false)
         MontGap()
 
-        MontToggleRow(label = "Haptics", on = haptics, enabled = granted.value) {
+        MontToggleRow(label = "Haptics", on = haptics, enabled = granted) {
             haptics = it; prefs.haptics = it
         }
         MontGap()
 
-        if (granted.value) {
+        if (granted) {
             MontRow(label = "Accessibility", value = "granted", dim = true)
         } else {
             MontRow(label = "Accessibility — grant", dim = false, onClick = onGrant)

@@ -23,6 +23,11 @@ class Prefs(context: Context) {
         get() = store.getBoolean(KEY_FLASH, true)
         set(value) = store.edit().putBoolean(KEY_FLASH, value).apply()
 
+    /** Whether the first run has been seen. The tour is the only place the gestures are named. */
+    var onboarded: Boolean
+        get() = store.getBoolean(KEY_ONBOARDED, false)
+        set(value) = store.edit().putBoolean(KEY_ONBOARDED, value).apply()
+
     var haptics: Boolean
         get() = store.getBoolean(KEY_HAPTICS, true)
         set(value) = store.edit().putBoolean(KEY_HAPTICS, value).apply()
@@ -42,5 +47,6 @@ class Prefs(context: Context) {
         const val KEY_CORNER = "gesture_corner_swipe"
         const val KEY_FLASH = "gesture_flash_press"
         const val KEY_HAPTICS = "haptics"
+        const val KEY_ONBOARDED = "onboarded"
     }
 }
