@@ -1,7 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!--
+      Optional, and the launcher works without it. It answers one sort order — "recent use" —
+      and is granted in Settings rather than by a dialog; without it the grid falls back to the
+      launches miniTools made itself.
+    -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- A launcher has to be able to see what there is to launch. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
         android:name=".MiniToolsApplication"
@@ -43,6 +61,21 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".LauncherActivity"
+            android:exported="true"
+            android:label="miniTools Launcher"
+            android:resizeableActivity="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|keyboardHidden"
+            android:theme="@style/Theme.MiniTools">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="com.samsung.android.support.COVER_SCREEN" />
+            </intent-filter>
+        </activity>
+
         <!-- Owns the two invisible gesture zones on the cover panel. -->
         <service
             android:name=".ToolsService"
@@ -55,6 +88,20 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <receiver
+            android:name=".LauncherWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/launcher_widget_info" />
+            <meta-data
+                android:name="com.samsung.android.appwidget.provider"
+                android:resource="@xml/samsung_cover_widget_info" />
+        </receiver>
 
         <receiver
             android:name=".CoverWidgetProvider"

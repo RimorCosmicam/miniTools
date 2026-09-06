@@ -62,7 +62,7 @@ class CoverActivity : ComponentActivity() {
                 var onboarded by remember { mutableStateOf(prefs.onboarded) }
 
                 if (onboarded) {
-                    Toolbox(granted, ::openAccessibilitySettings, ::finish)
+                    Toolbox(granted, ::openAccessibilitySettings, ::openLauncher, ::finish)
                 } else {
                     Welcome(
                         granted = granted,
@@ -74,6 +74,14 @@ class CoverActivity : ComponentActivity() {
         }
     }
 
+    private fun openLauncher() {
+        val options = android.app.ActivityOptions.makeBasic()
+            .apply { launchDisplayId = CoverDisplay.idOrDefault(this@CoverActivity) }
+        runCatching {
+            startActivity(Intent(this, LauncherActivity::class.java), options.toBundle())
+        }
+    }
+
     private fun openAccessibilitySettings() {
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -82,7 +90,7 @@ class CoverActivity : ComponentActivity() {
 }
 
 @Composable
-private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onClose: () -> Unit) {
+private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
 
@@ -134,6 +142,7 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onClose: () -> Unit) 
                     .verticalScroll(rememberScrollState()),
             ) {
                 MontRow(label = "Recents", value = if (live) "on" else "off", enabled = granted)
+                MontRow(label = "Launcher", value = "open", onClick = onLauncher)
                 MontGap()
 
                 MontToggleRow(label = "Corner swipe", on = corner, enabled = granted) {
@@ -145,10 +154,6 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onClose: () -> Unit) 
                 MontToggleRow(label = "Haptics", on = haptics, enabled = granted) {
                     haptics = it; prefs.haptics = it
                 }
-                MontGap()
-
-                MontRow(label = "Notifications", value = "—", enabled = false)
-                MontRow(label = "Quick settings", value = "—", enabled = false)
                 MontGap()
 
                 if (granted) {

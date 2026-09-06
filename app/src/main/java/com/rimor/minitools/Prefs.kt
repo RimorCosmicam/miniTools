@@ -32,6 +32,48 @@ class Prefs(context: Context) {
         get() = store.getBoolean(KEY_HAPTICS, true)
         set(value) = store.edit().putBoolean(KEY_HAPTICS, value).apply()
 
+    // ---- the launcher -------------------------------------------------------------------
+
+    var sortOrder: SortOrder
+        get() = SortOrder.from(store.getString(KEY_SORT, null))
+        set(value) = store.edit().putString(KEY_SORT, value.name).apply()
+
+    /** The card behind the grid. Turning it off leaves the icons on the wallpaper. */
+    var launcherBackground: Boolean
+        get() = store.getBoolean(KEY_BACKGROUND, true)
+        set(value) = store.edit().putBoolean(KEY_BACKGROUND, value).apply()
+
+    /** The word "LAUNCHER" over the grid. */
+    var launcherTitle: Boolean
+        get() = store.getBoolean(KEY_TITLE, true)
+        set(value) = store.edit().putBoolean(KEY_TITLE, value).apply()
+
+    /** Lifted to the front whatever the sort. */
+    var favourites: Set<String>
+        get() = store.getStringSet(KEY_FAVOURITES, emptySet()).orEmpty()
+        set(value) = store.edit().putStringSet(KEY_FAVOURITES, value).apply()
+
+    /** Not listed at all. */
+    var hidden: Set<String>
+        get() = store.getStringSet(KEY_HIDDEN, emptySet()).orEmpty()
+        set(value) = store.edit().putStringSet(KEY_HIDDEN, value).apply()
+
+    /**
+     * When each app was last opened *through miniTools*.
+     *
+     * This is the fallback for "recent use" when the system's usage access has not been granted.
+     * It only knows about launches from this grid, which is less than the truth but is honest
+     * about itself and costs no permission at all.
+     */
+    fun recordLaunch(packageName: String) {
+        store.edit().putLong(KEY_USED_PREFIX + packageName, System.currentTimeMillis()).apply()
+    }
+
+    fun ownLaunchTimes(): Map<String, Long> =
+        store.all.entries
+            .filter { it.key.startsWith(KEY_USED_PREFIX) && it.value is Long }
+            .associate { it.key.removePrefix(KEY_USED_PREFIX) to it.value as Long }
+
     fun observe(onChange: () -> Unit): SharedPreferences.OnSharedPreferenceChangeListener {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> onChange() }
         store.registerOnSharedPreferenceChangeListener(listener)
@@ -48,5 +90,11 @@ class Prefs(context: Context) {
         const val KEY_FLASH = "gesture_flash_press"
         const val KEY_HAPTICS = "haptics"
         const val KEY_ONBOARDED = "onboarded"
+        const val KEY_SORT = "launcher_sort"
+        const val KEY_BACKGROUND = "launcher_background"
+        const val KEY_TITLE = "launcher_title"
+        const val KEY_FAVOURITES = "launcher_favourites"
+        const val KEY_HIDDEN = "launcher_hidden"
+        const val KEY_USED_PREFIX = "used/"
     }
 }

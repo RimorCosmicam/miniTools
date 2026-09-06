@@ -15,6 +15,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 /**
  * The language, as the four things this app actually needs from it.
@@ -142,4 +150,47 @@ fun MontWordmark(light: String, heavy: String) {
 @Composable
 fun MontGap(height: Int = 9) {
     Column(modifier = Modifier.height(height.dp)) {}
+}
+
+/**
+ * The command bar — Mont's touch context menu.
+ *
+ * Full width, anchored to the top edge and holding off it by the cover tier's 44, one word per
+ * line, spaced 1 apart, which is to say not at all. It has no title: you opened it from the thing
+ * it belongs to, it opens over that thing, and the first line is already an option rather than a
+ * label naming the panel.
+ *
+ * Capped and scrolling inside the cap, because the hidden-apps list is as long as somebody made
+ * it and the panel is not.
+ */
+@Composable
+fun CommandBar(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            // Anywhere off the bar closes it. No scrim: the bar is 92% black and the thing it
+            // acts on should stay visible underneath, which is the whole reason it has no title.
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onDismiss,
+            ),
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .align(Alignment.TopStart)
+                .background(Mont.Surface)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                )
+                .heightIn(max = 300.dp)
+                .verticalScroll(rememberScrollState())
+                .padding(start = 22.dp, top = 44.dp, end = 14.dp, bottom = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp),
+            content = content,
+        )
+    }
 }
