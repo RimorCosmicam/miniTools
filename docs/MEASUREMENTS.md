@@ -101,9 +101,36 @@ force-stopping the launcher at all.
 
 **The override is global and sticky.** It is a property of the display, not of
 the switcher, so anything that sets it without restoring leaves the whole cover
-screen at that density — including after a crash. Any shipped version of this
-needs a restore that runs on service connect and on boot, not only on the way out
-of the switcher.
+screen at that density — including after a crash. miniTools writes itself a note
+when it applies one and clears it on service connect and on boot.
+
+### Why the override is opt-in and defaults to native
+
+Setting it works. Putting it back reliably does not, and the reason is worth
+recording because it is not obvious.
+
+The switcher's task is `translucent=true`. The cover home therefore stays
+resumed *behind* it rather than being stopped, and it announces itself with a
+window-state change while the switcher is still on screen. Logging every event
+during one gesture gives exactly two:
+
+```
+pkg=com.sec.android.app.launcher  cls=com.android.quickstep.RecentsActivity
+pkg=com.android.systemui          cls=...subscreen.SubHomeActivity
+```
+
+The second arrives two or three seconds after the switcher opens, with the
+switcher still up and in use. "The user left the switcher" and "the home behind
+the switcher spoke up" are the *same event*, so a restore keyed on it fires
+mid-use: the density is applied, the switcher renders at it, and a moment later
+it snaps back to native under the reader's hands.
+
+An accessibility service that does not read window content has no way to tell
+those two apart. So the override ships opt-in, off by default, and the panel is
+left at its native 420 unless somebody chooses otherwise. A density that flickers
+is worse than one that is merely larger than you wanted.
+
+370 remains the right-looking number if that is ever solved.
 
 ## The gesture zones
 

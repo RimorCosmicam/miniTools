@@ -77,9 +77,14 @@ class Prefs(context: Context) {
     /**
      * The density the switcher is shown at, or 0 for the panel's own.
      *
-     * 370 by default because that is the figure that was arrived at by looking at it: at the
-     * panel's native 420 the switcher is bigger than it needs to be, and below about 340 it stops
-     * being comfortable to hit.
+     * Native by default, and deliberately. 370 is the better-looking figure — it was arrived at
+     * by looking at the panel — but an override cannot be put back reliably: the switcher's task
+     * is translucent, so the cover home stays resumed behind it and announces itself while the
+     * switcher is still on screen. "You left" and "the home behind you spoke" are the same event,
+     * so the density gets restored a second or two after it is set, mid-use.
+     *
+     * A density that flickers is worse than one that is merely larger than you wanted, so the
+     * override is opt-in and the panel is left alone unless somebody asks.
      */
     var switcherDensity: Int
         get() = store.getInt(KEY_DENSITY, DEFAULT_DENSITY)
@@ -121,6 +126,6 @@ class Prefs(context: Context) {
         const val KEY_USED_PREFIX = "used/"
         const val KEY_DENSITY = "switcher_density"
         const val KEY_DENSITY_APPLIED = "switcher_density_applied"
-        const val DEFAULT_DENSITY = 370
+        const val DEFAULT_DENSITY = 0
     }
 }
