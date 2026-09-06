@@ -232,7 +232,12 @@ private fun LauncherPage(prefs: Prefs, onOpen: () -> Unit, onChange: () -> Unit)
 
 @Composable
 private fun RecentsPage(prefs: Prefs, granted: Boolean, onChange: () -> Unit) {
+    val context = LocalContext.current
     MontRow(label = "Opened by", value = summary(prefs, Action.RECENTS), enabled = false)
+    MontGap()
+    MontRow(label = "Repair the interface", value = "run") { Recents.repair(context) }
+    MontDetail("Auto-rotate leaves Samsung's launcher holding the insets it saved while the panel was sideways, and every switcher after that is laid out against them. This starts the switcher once on the inner display, which writes upright insets over them. Nothing appears; the inner panel stays off.")
+    MontGap()
     MontDetail("One UI's own task switcher, put on the cover screen at the panel's native density. The list is rebuilt on every open, so what you used last is where it should be.")
 }
 
@@ -242,6 +247,8 @@ private fun RotatePage(prefs: Prefs, onChange: () -> Unit) {
     MontDetail("Samsung pins the cover panel to portrait and will not be talked out of it. miniTools holds an invisible window that asks for sensor orientation instead, and everything behind it turns with the phone.")
     MontGap()
     MontRow(label = "Toggled by", value = shortcutFor(prefs, Action.ROTATE), enabled = false)
+    MontGap()
+    MontDetail("Rotating breaks the Recents interface until it is repaired — Recents has a row for that. It is Samsung's bug, not one miniTools can prevent.")
 }
 
 /** Which gestures reach a feature, said as a value rather than a sentence. */

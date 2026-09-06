@@ -189,6 +189,57 @@ enters through quickstep, which reloads the model on the way in.
 `NEW_TASK | CLEAR_TASK | TASK_ON_HOME` (`0x1000C000`) forces a fresh instance,
 and a fresh instance reads the list again. Back still returns to the cover home.
 
+## Rotation, and what it costs the switcher
+
+Samsung pins the cover panel to portrait and cannot be talked out of it.
+`wm user-rotation -d 1 lock 1` is accepted and ignored, and so is
+`set-ignore-orientation-request`; the panel reports `mSupportAutoRotation=true`
+and stays 948 x 1048 through all of it.
+
+What works is asking rather than telling. A display rotates to satisfy the
+topmost window that expresses an orientation, and the cover screen never turns
+because the thing on it asks for `SCREEN_ORIENTATION_NOSENSOR`. A window of our
+own — zero by zero, invisible, `screenOrientation = SENSOR` — is enough, and it
+needs no permission at all as an accessibility overlay.
+
+### The cost, which is Samsung's bug and not ours
+
+Rotating once breaks the switcher's layout until it is repaired. From the
+launcher's own log while broken:
+
+```
+RecentInsetsManagerImpl: standardInsetsType: 131, isValidWindowInsets: false
+RecentInsetsManagerImpl: Use savedInsets: InsetsData(standardInsets=
+    Insets{left=0, top=0, right=220, bottom=0}
+```
+
+`right=220` is the camera cutout **as it is in landscape**. The launcher keeps one
+global saved-insets value and falls back to it whenever it cannot read live ones —
+and on this phone it never can, because the cover panel always reports
+`isValidWindowInsets: false`. So the saved value is the only value it ever uses,
+a rotation writes a sideways one into it, and every switcher afterwards is laid
+out against that.
+
+| Last writer of savedInsets | Value | Cover switcher |
+|---|---|---|
+| boot | `bottom=220` | correct |
+| a rotation | `right=220` | cards narrow, "Close all" under the island |
+| switcher on display 0 | `top=109, bottom=126` | correct shape, sits ~109px low |
+
+It survives a launcher restart, which is what makes it look unfixable: the value
+is not in the launcher's process. It does not survive a reboot.
+
+**The repair.** Start the switcher once on display 0. That is the only display
+where insets are ever valid, so it rewrites the saved value with an upright one.
+This phone has no inner panel at all — display 0 is permanently `state OFF` — and
+starting an activity there neither wakes it nor disturbs the cover screen, so the
+repair is invisible. It writes the inner display's insets rather than the cover's,
+which is why the result sits slightly low. Slightly low beats sideways.
+
+None of this is reachable from the cover side: the density lever does nothing,
+`am kill` will not touch the launcher because it is the home process, and
+force-stop is not an ordinary app's to call.
+
 ## Other apps already in these places
 
 Both zones are already claimed by third-party cover-screen apps on this phone,

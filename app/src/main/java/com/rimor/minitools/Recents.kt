@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.view.Display
 
 /**
  * One UI's own task switcher, put on the cover screen.
@@ -37,6 +38,33 @@ object Recents {
         true
     } catch (e: Exception) {
         Log.w(TAG, "recents refused on display $displayId", e)
+        false
+    }
+
+    /**
+     * Undo what a rotation did to Samsung's launcher, without a reboot.
+     *
+     * The launcher keeps one saved set of window insets and falls back to it whenever it cannot
+     * read live ones. On this phone it never can: the cover panel always reports
+     * isValidWindowInsets=false, so the saved value is the only value it ever uses. A rotation
+     * writes that value while the panel is sideways — the camera cutout's 220 lands on the right
+     * instead of the bottom — and every switcher afterwards is laid out against it.
+     *
+     * Nothing repairs it from the cover side. But the saved value is global, and it is rewritten
+     * whenever the launcher does read valid insets. So the switcher is started once on the inner
+     * display, which overwrites the sideways insets with upright ones.
+     *
+     * On a Flip with no inner panel that display is permanently off, and starting an activity
+     * there neither wakes it nor disturbs the cover screen — the repair is invisible. The insets
+     * it writes are the inner display's rather than the cover's, so the result sits slightly
+     * lower than it does after a boot. Slightly low beats sideways.
+     */
+    fun repair(context: Context): Boolean = try {
+        val options = ActivityOptions.makeBasic().apply { launchDisplayId = Display.DEFAULT_DISPLAY }
+        context.startActivity(intent(), options.toBundle())
+        true
+    } catch (e: Exception) {
+        Log.w(TAG, "could not repair the switcher", e)
         false
     }
 
