@@ -108,7 +108,8 @@ meaningful property is `screenOrientation = SCREEN_ORIENTATION_SENSOR`.
 Everything behind it then turns with the phone.
 
 As an accessibility overlay this costs no permission at all. The technique is
-[CoverSpin](https://github.com/)'s; it was worth reading rather than out-guessing.
+CoverSpin's, read out of its APK rather than guessed at — it holds no privileged
+permission of any kind, which is what gave the game away.
 
 ## The flash is a button
 
