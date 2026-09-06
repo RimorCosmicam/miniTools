@@ -36,6 +36,13 @@ class ToolsService : AccessibilityService() {
         prefs = Prefs(this)
         listener = prefs.observe { syncZones() }
 
+        // An override we set and never cleared — because we were killed, or the phone rebooted
+        // while the switcher was up — would otherwise leave the cover screen at the wrong density
+        // with nothing to put it back. This is the net under that.
+        if (prefs.densityApplied) {
+            restoreDensity()
+        }
+
         coverDisplay = CoverDisplay.find(this)
         val display = coverDisplay
         if (display == null) {
@@ -59,7 +66,21 @@ class ToolsService : AccessibilityService() {
         super.onDestroy()
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) = Unit
+    /**
+     * The only reason this service listens to anything.
+     *
+     * The density is put back when the switcher stops being what is on screen. Watching for that
+     * is the whole subscription: no window content is read, and the event is used for nothing but
+     * the name of the package that now has the window.
+     */
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (!prefs.densityApplied) return
+        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val pkg = event.packageName?.toString() ?: return
+        if (pkg != RECENTS_PACKAGE) {
+            restoreDensity()
+        }
+    }
 
     override fun onInterrupt() = Unit
 
@@ -140,6 +161,30 @@ class ToolsService : AccessibilityService() {
         }
     }
 
+    /**
+     * Set the density before the switcher is started, never after.
+     *
+     * The switcher is started with CLEAR_TASK, so it is built fresh every time — and a fresh
+     * activity reads the density that is in force when it is created. That is what makes this
+     * work without force-stopping Samsung's launcher, which declares keepalive.density=true and
+     * would otherwise carry its old layout straight through the change.
+     */
+    private fun applyDensity() {
+        val display = coverDisplay ?: return
+        val density = prefs.switcherDensity
+        if (density <= 0 || !Density.permitted(this)) return
+        if (Density.apply(this, display.displayId, density)) {
+            prefs.densityApplied = true
+        }
+    }
+
+    private fun restoreDensity() {
+        val displayId = coverDisplay?.displayId ?: CoverDisplay.idOrDefault(this)
+        if (Density.restore(this, displayId)) {
+            prefs.densityApplied = false
+        }
+    }
+
     private fun tick() {
         val vibrator = getSystemService(Vibrator::class.java) ?: return
         if (!vibrator.hasVibrator()) return
@@ -147,6 +192,8 @@ class ToolsService : AccessibilityService() {
     }
 
     companion object {
+        private const val RECENTS_PACKAGE = "com.sec.android.app.launcher"
+
         @Volatile
         private var instance: ToolsService? = null
 

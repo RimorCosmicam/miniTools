@@ -98,6 +98,7 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Uni
     var corner by remember { mutableStateOf(prefs.cornerSwipe) }
     var flash by remember { mutableStateOf(prefs.flashPress) }
     var haptics by remember { mutableStateOf(prefs.haptics) }
+    var density by remember { mutableStateOf(prefs.switcherDensity) }
 
     val live = granted && (corner || flash)
 
@@ -155,6 +156,20 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Uni
                 MontToggleRow(label = "Haptics", on = haptics, enabled = granted) {
                     haptics = it; prefs.haptics = it
                 }
+
+                // The switcher's density. NATIVE leaves the panel alone; anything else is set on
+                // the way in and put back on the way out.
+                val permitted = Density.permitted(context)
+                MontRow(
+                    label = "Switcher density",
+                    value = if (density <= 0) "native" else "$density",
+                    enabled = permitted,
+                ) {
+                    density = nextDensity(density).also { prefs.switcherDensity = it }
+                }
+                if (!permitted) {
+                    MontDetail("Needs WRITE_SECURE_SETTINGS, granted once over adb. Until then the switcher opens at the panel's own 420.")
+                }
                 MontGap()
 
                 if (granted) {
@@ -168,6 +183,12 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Uni
         }
     }
 }
+
+/** The candidates, in the order the row walks through them. 0 is the panel's own density. */
+private val DENSITIES = listOf(370, 400, 420, 340, 0)
+
+private fun nextDensity(current: Int): Int =
+    DENSITIES[(DENSITIES.indexOf(current).takeIf { it >= 0 }?.plus(1) ?: 0) % DENSITIES.size]
 
 /**
  * Whether the service is switched on, read from the setting rather than from the service.

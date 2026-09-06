@@ -74,6 +74,29 @@ class Prefs(context: Context) {
             .filter { it.key.startsWith(KEY_USED_PREFIX) && it.value is Long }
             .associate { it.key.removePrefix(KEY_USED_PREFIX) to it.value as Long }
 
+    /**
+     * The density the switcher is shown at, or 0 for the panel's own.
+     *
+     * 370 by default because that is the figure that was arrived at by looking at it: at the
+     * panel's native 420 the switcher is bigger than it needs to be, and below about 340 it stops
+     * being comfortable to hit.
+     */
+    var switcherDensity: Int
+        get() = store.getInt(KEY_DENSITY, DEFAULT_DENSITY)
+        set(value) = store.edit().putInt(KEY_DENSITY, value).apply()
+
+    /**
+     * Whether an override of ours is currently in force.
+     *
+     * A display density is global and sticky, so if miniTools dies holding one the cover screen
+     * stays that way. This is the note it leaves itself: on the next service connect, or the next
+     * boot, an override that is still recorded here gets cleared. It is also why the restore only
+     * ever undoes something we set, rather than clearing whatever it finds.
+     */
+    var densityApplied: Boolean
+        get() = store.getBoolean(KEY_DENSITY_APPLIED, false)
+        set(value) = store.edit().putBoolean(KEY_DENSITY_APPLIED, value).apply()
+
     fun observe(onChange: () -> Unit): SharedPreferences.OnSharedPreferenceChangeListener {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> onChange() }
         store.registerOnSharedPreferenceChangeListener(listener)
@@ -96,5 +119,8 @@ class Prefs(context: Context) {
         const val KEY_FAVOURITES = "launcher_favourites"
         const val KEY_HIDDEN = "launcher_hidden"
         const val KEY_USED_PREFIX = "used/"
+        const val KEY_DENSITY = "switcher_density"
+        const val KEY_DENSITY_APPLIED = "switcher_density_applied"
+        const val DEFAULT_DENSITY = 370
     }
 }

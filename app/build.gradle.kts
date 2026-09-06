@@ -47,6 +47,9 @@ android {
 dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core-ktx:1.18.0")
+    // The per-display density setter is hidden API. The permission is grantable; the blocklist
+    // is the part that needs lifting, and this is maintained against exactly that.
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.compose.ui:ui:1.10.5")
     implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
