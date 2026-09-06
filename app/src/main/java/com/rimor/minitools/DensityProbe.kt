@@ -80,10 +80,14 @@ object DensityProbe {
      * outside it — so the exemption setter can be reached and told to exempt everything.
      */
     private fun liftHiddenApiRestrictions() {
+        // Kotlin will not take a generic type in a class literal, so the array classes are
+        // taken from actual empty arrays instead.
+        val classArrayType: Class<*> = emptyArray<Class<*>>().javaClass
+        val stringArrayType: Class<*> = emptyArray<String>().javaClass
         val getDeclaredMethod = Class::class.java.getDeclaredMethod(
             "getDeclaredMethod",
             String::class.java,
-            Array<Class<*>>::class.java,
+            classArrayType,
         )
         val vmRuntime = Class::class.java
             .getDeclaredMethod("forName", String::class.java)
@@ -91,7 +95,7 @@ object DensityProbe {
         val getRuntime = getDeclaredMethod
             .invoke(vmRuntime, "getRuntime", emptyArray<Class<*>>()) as Method
         val setExemptions = getDeclaredMethod
-            .invoke(vmRuntime, "setHiddenApiExemptions", arrayOf(Array<String>::class.java)) as Method
+            .invoke(vmRuntime, "setHiddenApiExemptions", arrayOf(stringArrayType)) as Method
         setExemptions.invoke(getRuntime.invoke(null), arrayOf("L"))
     }
 }
