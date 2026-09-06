@@ -30,6 +30,14 @@ class ToolsService : AccessibilityService() {
     private var corner: View? = null
     private var flash: View? = null
 
+    /** Whether the switcher has actually appeared since the density was set. */
+    private var switcherSeen = false
+
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /** If the switcher never arrives, the density still has to come back. */
+    private val giveUp = Runnable { if (prefs.densityApplied) restoreDensity() }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
@@ -59,6 +67,8 @@ class ToolsService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        handler.removeCallbacks(giveUp)
+        if (prefs.densityApplied) restoreDensity()
         listener?.let { prefs.stopObserving(it) }
         removeZone(corner); corner = null
         removeZone(flash); flash = null
@@ -69,15 +79,23 @@ class ToolsService : AccessibilityService() {
     /**
      * The only reason this service listens to anything.
      *
-     * The density is put back when the switcher stops being what is on screen. Watching for that
-     * is the whole subscription: no window content is read, and the event is used for nothing but
-     * the name of the package that now has the window.
+     * The density is put back when the switcher stops being what is on screen — but not before it
+     * has been on screen. Between setting the density and the switcher actually appearing, other
+     * windows come and go and every one of them is a package that is not the launcher; restoring
+     * on the first of those undid the density before the switcher was ever built, which is
+     * exactly the bug this two-step guards against.
+     *
+     * So: arm on seeing the switcher, restore on the first thing that follows it. No window
+     * content is read; the event is used for nothing but the name of the package that now holds
+     * the window.
      */
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!prefs.densityApplied) return
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
-        if (pkg != RECENTS_PACKAGE) {
+        if (pkg == RECENTS_PACKAGE) {
+            switcherSeen = true
+        } else if (switcherSeen) {
             restoreDensity()
         }
     }
@@ -175,10 +193,17 @@ class ToolsService : AccessibilityService() {
         if (density <= 0 || !Density.permitted(this)) return
         if (Density.apply(this, display.displayId, density)) {
             prefs.densityApplied = true
+            switcherSeen = false
+            // A launch that never lands would otherwise leave the panel at the wrong density
+            // until something else happened to put it back.
+            handler.removeCallbacks(giveUp)
+            handler.postDelayed(giveUp, GIVE_UP_MS)
         }
     }
 
     private fun restoreDensity() {
+        handler.removeCallbacks(giveUp)
+        switcherSeen = false
         val displayId = coverDisplay?.displayId ?: CoverDisplay.idOrDefault(this)
         if (Density.restore(this, displayId)) {
             prefs.densityApplied = false
@@ -193,6 +218,9 @@ class ToolsService : AccessibilityService() {
 
     companion object {
         private const val RECENTS_PACKAGE = "com.sec.android.app.launcher"
+
+        /** Long enough for the switcher to appear, short enough not to strand the panel. */
+        private const val GIVE_UP_MS = 8_000L
 
         @Volatile
         private var instance: ToolsService? = null
