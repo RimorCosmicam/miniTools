@@ -132,7 +132,8 @@ class ToolsService : AccessibilityService() {
 
     private fun fire() {
         if (prefs.haptics) tick()
-        if (!Recents.open(this, coverDisplay)) {
+        val displayId = coverDisplay?.displayId ?: Display.DEFAULT_DISPLAY
+        if (!Recents.open(this, displayId)) {
             // The launcher would not take the explicit start. The global action is coarser — it
             // picks its own display — but it is better than nothing happening at all.
             performGlobalAction(GLOBAL_ACTION_RECENTS)
