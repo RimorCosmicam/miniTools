@@ -110,13 +110,13 @@ class ToolsService : AccessibilityService() {
             existing = corner,
             wanted = prefs.cornerSwipe,
             zone = Zones.CORNER,
-            gesture = GestureZoneView.Gesture.SWIPE_UP,
+            gestures = setOf(Gesture.SWIPE_UP),
         )
         flash = reconcile(
             existing = flash,
             wanted = prefs.flashPress,
             zone = Zones.FLASH,
-            gesture = GestureZoneView.Gesture.LONG_PRESS,
+            gestures = setOf(Gesture.TAP, Gesture.DOUBLE_TAP, Gesture.HOLD),
         )
     }
 
@@ -124,16 +124,16 @@ class ToolsService : AccessibilityService() {
         existing: View?,
         wanted: Boolean,
         zone: Zone,
-        gesture: GestureZoneView.Gesture,
+        gestures: Set<Gesture>,
     ): View? {
-        if (wanted && existing == null) return addZone(zone, gesture)
+        if (wanted && existing == null) return addZone(zone, gestures)
         if (!wanted && existing != null) removeZone(existing)
         return if (wanted) existing else null
     }
 
-    private fun addZone(zone: Zone, gesture: GestureZoneView.Gesture): View? {
+    private fun addZone(zone: Zone, gestures: Set<Gesture>): View? {
         val wm = windows ?: return null
-        val view = GestureZoneView(createDisplayContext(coverDisplay!!), gesture) { fire() }
+        val view = GestureZoneView(createDisplayContext(coverDisplay!!), gestures, ::dispatch)
         val params = WindowManager.LayoutParams(
             zone.width,
             zone.height,
@@ -152,7 +152,7 @@ class ToolsService : AccessibilityService() {
             // the flash, which is the entire point of the flash zone.
             layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
-            title = "miniTools/${gesture.name}"
+            title = "miniTools/" + gestures.joinToString("+") { it.name }
         }
         return try {
             wm.addView(view, params)
@@ -169,8 +169,19 @@ class ToolsService : AccessibilityService() {
 
     // ---- what a gesture does ------------------------------------------------------------
 
-    private fun fire() {
+    private fun dispatch(gesture: Gesture) {
+        val action = prefs.actionFor(gesture)
+        if (action == Action.NONE) return
         if (prefs.haptics) tick()
+        when (action) {
+            Action.RECENTS -> openRecents()
+            Action.LAUNCHER -> openLauncher()
+            Action.ROTATE -> toggleRotation()
+            Action.NONE -> Unit
+        }
+    }
+
+    private fun openRecents() {
         // Before the start, never after: the switcher is built fresh on every open and reads the
         // density that is in force at the moment it is created.
         applyDensity()
@@ -179,6 +190,34 @@ class ToolsService : AccessibilityService() {
             // The launcher would not take the explicit start. The global action is coarser — it
             // picks its own display — but it is better than nothing happening at all.
             performGlobalAction(GLOBAL_ACTION_RECENTS)
+        }
+    }
+
+    private fun openLauncher() {
+        val options = android.app.ActivityOptions.makeBasic()
+            .apply { launchDisplayId = coverDisplay?.displayId ?: Display.DEFAULT_DISPLAY }
+        runCatching {
+            startActivity(
+                android.content.Intent(this, LauncherActivity::class.java)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK),
+                options.toBundle(),
+            )
+        }
+    }
+
+    private fun toggleRotation() {
+        val display = coverDisplay ?: return
+        val on = Rotation.toggle(this, display)
+        say(if (on) "Rotation On" else "Rotation Off")
+    }
+
+    /** A toast, on the panel the gesture happened on rather than the one behind your hand. */
+    private fun say(text: String) {
+        val display = coverDisplay ?: return
+        runCatching {
+            val ui = createDisplayContext(display)
+            android.widget.Toast.makeText(ui, text, android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 

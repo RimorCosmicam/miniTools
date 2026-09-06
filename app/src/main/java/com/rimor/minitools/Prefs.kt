@@ -15,6 +15,35 @@ class Prefs(context: Context) {
     private val store: SharedPreferences =
         context.applicationContext.getSharedPreferences(NAME, Context.MODE_PRIVATE)
 
+    /**
+     * What each gesture does. The flash carries three, the corner one.
+     *
+     * Defaults follow the shape of the hand: a tap is the cheapest gesture so it gets the thing
+     * reached for most, and rotation is a mode rather than a destination, so it sits behind the
+     * deliberate double tap where it will not be hit by accident.
+     */
+    fun actionFor(gesture: Gesture): Action = Action.from(store.getString(key(gesture), null))
+        .let { stored ->
+            if (store.contains(key(gesture))) stored else defaultAction(gesture)
+        }
+
+    fun setAction(gesture: Gesture, action: Action) {
+        store.edit().putString(key(gesture), action.name).apply()
+    }
+
+    /** Every gesture currently pointed at this feature. Empty means it cannot be reached. */
+    fun gesturesFor(action: Action): List<Gesture> =
+        Gesture.entries.filter { actionFor(it) == action }
+
+    private fun key(gesture: Gesture) = KEY_ACTION_PREFIX + gesture.name
+
+    private fun defaultAction(gesture: Gesture): Action = when (gesture) {
+        Gesture.TAP -> Action.LAUNCHER
+        Gesture.DOUBLE_TAP -> Action.ROTATE
+        Gesture.HOLD -> Action.RECENTS
+        Gesture.SWIPE_UP -> Action.RECENTS
+    }
+
     var cornerSwipe: Boolean
         get() = store.getBoolean(KEY_CORNER, true)
         set(value) = store.edit().putBoolean(KEY_CORNER, value).apply()
@@ -125,6 +154,7 @@ class Prefs(context: Context) {
         const val KEY_HIDDEN = "launcher_hidden"
         const val KEY_USED_PREFIX = "used/"
         const val KEY_DENSITY = "switcher_density"
+        const val KEY_ACTION_PREFIX = "action/"
         const val KEY_DENSITY_APPLIED = "switcher_density_applied"
         const val DEFAULT_DENSITY = 0
     }
