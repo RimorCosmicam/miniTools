@@ -47,6 +47,9 @@ android {
 dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core-ktx:1.18.0")
+    // Probe dependency. The blocklist, not the permission, is what stands between an app
+    // holding WRITE_SECURE_SETTINGS and the per-display density setter.
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:6.1")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.compose.ui:ui:1.10.5")
     implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")

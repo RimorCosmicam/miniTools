@@ -96,6 +96,12 @@ object DensityProbe {
      * outside it — so the exemption setter can be reached and told to exempt everything.
      */
     private fun liftHiddenApiRestrictions() {
+        // The maintained bypass first. The hand-rolled double-reflection below it is what
+        // Android 16 closed: VMRuntime.setHiddenApiExemptions is no longer reachable that way.
+        runCatching {
+            org.lsposed.hiddenapibypass.HiddenApiBypass.addHiddenApiExemptions("")
+            return
+        }
         // Kotlin will not take a generic type in a class literal, so the array classes are
         // taken from actual empty arrays instead.
         val classArrayType: Class<*> = emptyArray<Class<*>>().javaClass
