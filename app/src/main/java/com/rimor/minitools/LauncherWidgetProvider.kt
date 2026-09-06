@@ -59,15 +59,17 @@ class LauncherWidgetProvider : AppWidgetProvider() {
         views.setEmptyView(R.id.launcher_widget_grid, R.id.launcher_widget_empty)
 
         // One template for every cell, carrying the cover display; the cell's fill-in intent
-        // supplies only which app. MUTABLE because a fill-in that cannot change the intent is a
-        // grid where every icon opens the same thing.
+        // supplies only which app. It has to be MUTABLE — a fill-in that cannot change the intent
+        // is a grid where every icon opens the same thing — and from Android 14 a mutable
+        // PendingIntent may not wrap an implicit intent. "MAIN/LAUNCHER with no component" is
+        // implicit, so the template names our own trampoline, which is not.
         val options = ActivityOptions.makeBasic()
             .apply { launchDisplayId = CoverDisplay.idOrDefault(context) }
             .toBundle()
         val template = PendingIntent.getActivity(
             context,
             21,
-            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            Intent(context, LaunchTrampolineActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
             options,

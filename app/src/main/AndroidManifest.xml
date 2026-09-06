@@ -76,6 +76,19 @@
             </intent-filter>
         </activity>
 
+        <!--
+          Draws nothing and lives for one call. The widget's cells launch through it because a
+          collection widget's click template has to be mutable, and a mutable PendingIntent may
+          not wrap an implicit intent from Android 14 onwards.
+        -->
+        <activity
+            android:name=".LaunchTrampolineActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.MiniTools.Invisible" />
+
         <!-- Feeds the launcher widget's grid. -->
         <service
             android:name=".LauncherWidgetService"

@@ -1,6 +1,5 @@
 package com.rimor.minitools
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -63,14 +62,13 @@ private class LauncherGridFactory(private val context: Context) :
             if (app.packageName in favourites) Color.WHITE else DIM,
         )
 
-        // The template carries the display id; this only says which app.
+        // The template carries the display id and names the trampoline; this only says which
+        // app, as extras rather than as a component, because the template must stay explicit.
         views.setOnClickFillInIntent(
             R.id.cell_root,
-            Intent().apply {
-                action = Intent.ACTION_MAIN
-                addCategory(Intent.CATEGORY_LAUNCHER)
-                component = ComponentName(app.packageName, app.activityName)
-            },
+            Intent()
+                .putExtra(LaunchTrampolineActivity.EXTRA_PACKAGE, app.packageName)
+                .putExtra(LaunchTrampolineActivity.EXTRA_ACTIVITY, app.activityName),
         )
         return views
     }
