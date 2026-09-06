@@ -45,6 +45,17 @@ object Recents {
         addCategory(Intent.CATEGORY_DEFAULT)
         // NEW_TASK because there is no activity behind this, and TASK_ON_HOME so dismissing the
         // switcher falls back to the cover home rather than to whatever launched it.
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_TASK_ON_HOME)
+        //
+        // CLEAR_TASK is what makes the list current. Started without it, an existing
+        // RecentsActivity is merely resumed — the system's task list has already moved on, but
+        // the switcher redraws the one it built when it was last created, so an app you used a
+        // moment ago is missing from it. Samsung's own gesture never hits this because it enters
+        // through quickstep, which reloads the model on the way in; an explicit start does not.
+        // Clearing the task forces a fresh instance, and a fresh instance reads the list again.
+        addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                Intent.FLAG_ACTIVITY_TASK_ON_HOME,
+        )
     }
 }
