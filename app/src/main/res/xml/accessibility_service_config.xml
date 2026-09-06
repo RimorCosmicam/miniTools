@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The narrowest configuration that still gets a window.
+
+  No event types are subscribed to, window content is not retrieved and key events are not
+  filtered. miniTools needs accessibility for one capability only — a window that outlives its
+  activity and sits over the cover screen — and asking for anything beyond that would be asking
+  for the ability to read the user's screen in order to draw two invisible rectangles.
+-->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:notificationTimeout="100"
+    android:description="@string/accessibility_description" />

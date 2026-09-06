@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">miniTools</string>
+    <string name="accessibility_description">Holds two invisible gesture zones on the cover screen — the bottom-left corner and the flash — and opens One UI\'s task switcher there when one of them is used. Reads no window content.</string>
+</resources>

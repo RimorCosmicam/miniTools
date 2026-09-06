@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The artwork inset into the adaptive icon's safe area.
+
+  An adaptive foreground is drawn on a 108dp canvas of which only the middle 72dp is guaranteed
+  to survive the launcher's mask, and every launcher masks differently. 20% keeps the phone's
+  corners inside a circle as well as a squircle, which is the only way one drawable looks right
+  on both.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@mipmap/tools"
+    android:inset="20%" />
