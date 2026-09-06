@@ -29,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -94,16 +95,10 @@ class CoverActivity : ComponentActivity() {
 private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Unit, onClose: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
+    var screen by remember { mutableStateOf(Screen.HOME) }
+    // Bumped whenever a setting changes, so the pages and the warnings below them agree.
+    var revision by remember { mutableStateOf(0) }
 
-    var corner by remember { mutableStateOf(prefs.cornerSwipe) }
-    var flash by remember { mutableStateOf(prefs.flashPress) }
-    var haptics by remember { mutableStateOf(prefs.haptics) }
-    var density by remember { mutableStateOf(prefs.switcherDensity) }
-
-    val live = granted && (corner || flash)
-
-    // The same ground the welcome stands on. The toolbox is where you come back to, so it should
-    // look like the place you arrived at rather than a different app that inherited the name.
     val transition = rememberInfiniteTransition(label = "toolbox")
     val travel by transition.animateFloat(
         0f, 1f, infiniteRepeatable(tween(5200, easing = LinearEasing)), label = "stripes",
@@ -120,68 +115,163 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Uni
         Column(
             Modifier
                 .fillMaxSize()
-                // The camera cutout and the navigation bar are real; the status inset is not,
-                // because the card is inset from every edge rather than hung from the top.
                 .windowInsetsPadding(
                     WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
                 )
                 .padding(horizontal = 18.dp, vertical = 20.dp)
                 .background(Mont.Surface)
-                // 22 left, 18 right: text hangs off a generous left margin and nothing needs the
-                // right one.
                 .padding(start = 22.dp, top = 22.dp, end = 18.dp, bottom = 16.dp),
         ) {
             MontWordmark(light = "mini", heavy = "Tools")
             MontGap(14)
 
-            // The cap is the card, and the card is what the panel leaves after the cutout and
-            // the navigation bar have taken their share. The list scrolls inside it. Giving the
-            // list a fixed ceiling instead cut a row through the middle and left mustard below
-            // it, which reads as a fault rather than as more list.
             Column(
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState()),
             ) {
-                MontRow(label = "Recents", value = if (live) "on" else "off", enabled = granted)
-                MontRow(label = "Launcher", value = "open", onClick = onLauncher)
+                key(revision) {
+                    when (screen) {
+                        Screen.HOME -> Home(prefs, granted) { screen = it }
+                        Screen.LAUNCHER -> LauncherPage(prefs, onLauncher) { revision++ }
+                        Screen.RECENTS -> RecentsPage(prefs, granted) { revision++ }
+                        Screen.ROTATE -> RotatePage(prefs) { revision++ }
+                        Screen.SHORTCUTS -> ShortcutsPage(prefs) { revision++ }
+                    }
+                }
+
                 MontGap()
-
-                MontToggleRow(label = "Corner swipe", on = corner, enabled = granted) {
-                    corner = it; prefs.cornerSwipe = it
-                }
-                MontToggleRow(label = "Flash press", on = flash, enabled = granted) {
-                    flash = it; prefs.flashPress = it
-                }
-                MontToggleRow(label = "Haptics", on = haptics, enabled = granted) {
-                    haptics = it; prefs.haptics = it
-                }
-
-                // The switcher's density. NATIVE leaves the panel alone; anything else is set on
-                // the way in and put back on the way out.
-                val permitted = Density.permitted(context)
-                MontRow(
-                    label = "Switcher density",
-                    value = if (density <= 0) "native" else "$density",
-                    enabled = permitted,
-                ) {
-                    density = nextDensity(density).also { prefs.switcherDensity = it }
-                }
-                if (!permitted) {
-                    MontDetail("Needs WRITE_SECURE_SETTINGS, granted once over adb. Until then the switcher opens at the panel's own 420.")
-                }
-                MontGap()
-
-                if (granted) {
-                    MontRow(label = "Accessibility", value = "granted", dim = true)
+                if (screen == Screen.HOME) {
+                    if (granted) {
+                        MontRow(label = "Accessibility", value = "granted", dim = true)
+                    } else {
+                        MontRow(label = "Accessibility — grant", onClick = onGrant)
+                        MontDetail("miniTools needs it to hold its windows over the cover screen.")
+                    }
+                    MontRow(label = "Close", dim = true, onClick = onClose)
                 } else {
-                    MontRow(label = "Accessibility — grant", onClick = onGrant)
-                    MontDetail("miniTools needs it to hold a window over the cover screen. It reads nothing.")
+                    MontRow(label = "Back", dim = true) { screen = Screen.HOME }
                 }
-                MontRow(label = "Close", dim = true, onClick = onClose)
             }
         }
     }
+}
+
+/** The list. Every tool, and the page that configures it. */
+@Composable
+private fun Home(prefs: Prefs, granted: Boolean, onOpen: (Screen) -> Unit) {
+    MontRow(label = "Launcher", value = summary(prefs, Action.LAUNCHER), enabled = granted) {
+        onOpen(Screen.LAUNCHER)
+    }
+    MontRow(label = "Recents", value = summary(prefs, Action.RECENTS), enabled = granted) {
+        onOpen(Screen.RECENTS)
+    }
+    MontRow(label = "Rotate", value = summary(prefs, Action.ROTATE), enabled = granted) {
+        onOpen(Screen.ROTATE)
+    }
+    MontRow(label = "Flash shortcuts", value = "set", enabled = granted) {
+        onOpen(Screen.SHORTCUTS)
+    }
+
+    // Said plainly, and only when it is true: a feature with no gesture pointed at it cannot be
+    // reached at all, and nothing else on this screen would tell you.
+    val unreachable = Action.features.filter { prefs.gesturesFor(it).isEmpty() }
+    if (unreachable.isNotEmpty()) {
+        MontGap()
+        unreachable.forEach {
+            MontDetail("You have no shortcut set for the ${it.label} feature.")
+        }
+    }
+}
+
+@Composable
+private fun ShortcutsPage(prefs: Prefs, onChange: () -> Unit) {
+    val actions = Action.entries.toList()
+    // The corner swipe sits with them because it is the same question — what does this do — and
+    // splitting it onto its own page would only hide one answer from the other three.
+    listOf(
+        Gesture.TAP to "1 tap",
+        Gesture.DOUBLE_TAP to "2 taps",
+        Gesture.HOLD to "Hold",
+        Gesture.SWIPE_UP to "Corner swipe",
+    ).forEach { (gesture, label) ->
+        MontRow(label = label, dim = true)
+        MontChips(
+            options = actions.map { it.label },
+            selected = actions.indexOf(prefs.actionFor(gesture)),
+        ) { picked ->
+            prefs.setAction(gesture, actions[picked])
+            onChange()
+        }
+    }
+    MontDetail("The first three are the flash. A tap waits a moment to find out whether a second one is coming.")
+}
+
+@Composable
+private fun LauncherPage(prefs: Prefs, onOpen: () -> Unit, onChange: () -> Unit) {
+    MontRow(label = "Open it", value = "now", onClick = onOpen)
+    MontGap()
+    MontToggleRow(label = "Card background", on = prefs.launcherBackground) {
+        prefs.launcherBackground = it; onChange()
+    }
+    MontToggleRow(label = "Title", on = prefs.launcherTitle) {
+        prefs.launcherTitle = it; onChange()
+    }
+    MontRow(label = "Sort", value = prefs.sortOrder.label) {
+        val all = SortOrder.entries
+        prefs.sortOrder = all[(prefs.sortOrder.ordinal + 1) % all.size]
+        onChange()
+    }
+    MontRow(label = "Hidden apps", value = "${prefs.hidden.size}", enabled = prefs.hidden.isNotEmpty()) {
+        prefs.hidden = emptySet(); onChange()
+    }
+    if (prefs.hidden.isNotEmpty()) MontDetail("Tap to unhide all of them.")
+    MontRow(label = "Favourites", value = "${prefs.favourites.size}", enabled = false)
+    MontDetail("Hold an app in the launcher to favourite or hide it.")
+}
+
+@Composable
+private fun RecentsPage(prefs: Prefs, granted: Boolean, onChange: () -> Unit) {
+    val context = LocalContext.current
+    val permitted = Density.permitted(context)
+    var density by remember { mutableStateOf(prefs.switcherDensity) }
+
+    MontRow(
+        label = "Switcher density",
+        value = if (density <= 0) "native" else "$density",
+        enabled = permitted,
+    ) {
+        density = nextDensity(density).also { prefs.switcherDensity = it }
+        onChange()
+    }
+    if (permitted) {
+        MontDetail("An override cannot be put back reliably — the cover home speaks up from behind the switcher — so it snaps back a second or two after it is set. Native is the honest setting.")
+    } else {
+        MontDetail("Needs WRITE_SECURE_SETTINGS, granted once over adb. Until then the switcher opens at the panel's own 420.")
+    }
+}
+
+@Composable
+private fun RotatePage(prefs: Prefs, onChange: () -> Unit) {
+    MontRow(label = "Rotation", value = if (Rotation.isOn) "on" else "off", dim = true)
+    MontDetail("Samsung pins the cover panel to portrait and will not be talked out of it. miniTools holds an invisible window that asks for sensor orientation instead, and everything behind it turns with the phone.")
+    MontGap()
+    MontRow(label = "Toggled by", value = shortcutFor(prefs, Action.ROTATE), enabled = false)
+}
+
+/** Which gestures reach a feature, said as a value rather than a sentence. */
+private fun summary(prefs: Prefs, action: Action): String {
+    val gestures = prefs.gesturesFor(action)
+    return if (gestures.isEmpty()) "no shortcut" else gestures.joinToString(" · ") { shortLabel(it) }
+}
+
+private fun shortcutFor(prefs: Prefs, action: Action): String = summary(prefs, action)
+
+private fun shortLabel(gesture: Gesture): String = when (gesture) {
+    Gesture.TAP -> "1 tap"
+    Gesture.DOUBLE_TAP -> "2 taps"
+    Gesture.HOLD -> "hold"
+    Gesture.SWIPE_UP -> "corner"
 }
 
 /** The candidates, in the order the row walks through them. 0 is the panel's own density. */

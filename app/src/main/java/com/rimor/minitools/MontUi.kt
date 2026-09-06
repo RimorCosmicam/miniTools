@@ -194,3 +194,35 @@ fun CommandBar(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Uni
         )
     }
 }
+
+/**
+ * A choice. No pill, no border, no fill — a chip is a row that happens to sit beside others, and
+ * it follows the identical rule: selected is bright, unselected is dim.
+ */
+@Composable
+fun MontChips(
+    options: List<String>,
+    selected: Int,
+    enabled: Boolean = true,
+    onPick: (Int) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        options.forEachIndexed { index, label ->
+            Text(
+                text = label.uppercase(),
+                style = Mont.caption,
+                color = when {
+                    !enabled -> Mont.Disabled
+                    index == selected -> Mont.Selected
+                    else -> Mont.Dim
+                },
+                modifier = Modifier
+                    .clickable(enabled = enabled) { onPick(index) }
+                    .padding(vertical = 3.dp),
+            )
+        }
+    }
+}
