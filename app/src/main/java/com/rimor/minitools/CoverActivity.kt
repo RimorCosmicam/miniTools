@@ -232,23 +232,8 @@ private fun LauncherPage(prefs: Prefs, onOpen: () -> Unit, onChange: () -> Unit)
 
 @Composable
 private fun RecentsPage(prefs: Prefs, granted: Boolean, onChange: () -> Unit) {
-    val context = LocalContext.current
-    val permitted = Density.permitted(context)
-    var density by remember { mutableStateOf(prefs.switcherDensity) }
-
-    MontRow(
-        label = "Switcher density",
-        value = if (density <= 0) "native" else "$density",
-        enabled = permitted,
-    ) {
-        density = nextDensity(density).also { prefs.switcherDensity = it }
-        onChange()
-    }
-    if (permitted) {
-        MontDetail("An override cannot be put back reliably — the cover home speaks up from behind the switcher — so it snaps back a second or two after it is set. Native is the honest setting.")
-    } else {
-        MontDetail("Needs WRITE_SECURE_SETTINGS, granted once over adb. Until then the switcher opens at the panel's own 420.")
-    }
+    MontRow(label = "Opened by", value = summary(prefs, Action.RECENTS), enabled = false)
+    MontDetail("One UI's own task switcher, put on the cover screen at the panel's native density. The list is rebuilt on every open, so what you used last is where it should be.")
 }
 
 @Composable
@@ -273,12 +258,6 @@ private fun shortLabel(gesture: Gesture): String = when (gesture) {
     Gesture.HOLD -> "hold"
     Gesture.SWIPE_UP -> "corner"
 }
-
-/** The candidates, in the order the row walks through them. 0 is the panel's own density. */
-private val DENSITIES = listOf(370, 400, 420, 340, 0)
-
-private fun nextDensity(current: Int): Int =
-    DENSITIES[(DENSITIES.indexOf(current).takeIf { it >= 0 }?.plus(1) ?: 0) % DENSITIES.size]
 
 /**
  * Whether the service is switched on, read from the setting rather than from the service.
