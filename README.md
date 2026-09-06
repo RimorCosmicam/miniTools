@@ -5,20 +5,33 @@
 Your folded phone, keeping its own tools.
 
 miniTools puts things the cover display should already have onto the cover
-display. The first of them is Recents: One UI's own task switcher, reachable
-without unfolding the phone.
+display. Two of them so far: One UI's own task switcher, and a launcher for
+every app on the phone — both reachable without unfolding it.
 
 Built for the Galaxy Z Flip 7 FlexWindow. It runs there and nowhere else.
 
-## What it does
+## The tools
 
-- **Recents** — Samsung's task switcher, on the cover screen, at the panel's
-  native density. Nothing is drawn, imitated or reskinned; the real one is
-  simply asked to appear somewhere it never gets asked.
-- **Two ways in, your choice of either or both** — swipe up from the bottom-left
-  corner, or press and hold the flash.
-- **Nothing else running** — no daemon, no pairing, no ADB, no `WRITE_SECURE_SETTINGS`.
-  Install it, switch it on, fold the phone.
+**Recents** — Samsung's task switcher, on the cover screen, at the panel's native
+density. Nothing is drawn, imitated or reskinned; the real one is simply asked to
+appear somewhere it never gets asked. Two ways in, your choice of either or both:
+swipe up from the bottom-left corner, or press and hold the flash.
+
+**Launcher** — every app on the phone, in a grid on the cover screen. The word
+top left, the order top right — A–Z, Z–A, NEW, USED — and tapping the order
+cycles it. Hold an app to favourite or hide it; favourites lead every order and
+are still sorted among themselves, so starring something never scrambles the sort
+you asked for. Hold the order, or tap the title, for the rest: the card
+background and the title can each be turned off, and hidden apps are put back
+from a list of their own.
+
+USED is the one order the package manager cannot answer. Usage access is optional
+and is offered only when that order is chosen; without it the grid falls back to
+the launches miniTools made itself.
+
+**Nothing else running** — no daemon, no pairing, no ADB, no
+`WRITE_SECURE_SETTINGS`, no density override. Install it, switch it on, fold the
+phone.
 
 ## The gestures
 

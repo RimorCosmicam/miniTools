@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -99,6 +100,11 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
     }
     val displayId = remember { CoverDisplay.idOrDefault(context) }
 
+    // Changing the order and staying where you were leaves you looking at the middle of a list
+    // you just asked to be rearranged. The answer to a new order is its beginning.
+    val grid = rememberLazyGridState()
+    LaunchedEffect(order) { grid.scrollToItem(0) }
+
     Box(
         Modifier
             .fillMaxSize()
@@ -151,6 +157,7 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
                 columns = GridCells.Adaptive(minSize = 74.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                state = grid,
                 modifier = Modifier.fillMaxSize(),
             ) {
                 items(apps, key = { it.packageName }) { app ->
