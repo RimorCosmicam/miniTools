@@ -49,6 +49,14 @@ class CoverActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Probe hook, temporary. See DensityProbe.
+        intent?.getIntExtra("probe_density", 0)?.takeIf { it != 0 }?.let { density ->
+            val id = CoverDisplay.idOrDefault(this)
+            android.util.Log.i("miniToolsProbe", "--- probe start ---")
+            if (density < 0) DensityProbe.clear(this, id) else DensityProbe.run(this, id, density)
+            android.util.Log.i("miniToolsProbe", "--- probe end ---")
+        }
         setContent {
             MiniToolsTheme {
                 val prefs = remember { Prefs(this) }
