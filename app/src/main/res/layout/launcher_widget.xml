@@ -1,39 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The same black rectangle, naming the tool it opens rather than the app it lives in. -->
+<!--
+  The widget is the launcher, not a card that opens one.
+
+  On a cover screen the Good Lock carousel is the home screen, so a widget that only says the
+  name of a tool costs a swipe and a tap before anything happens. This one holds the grid.
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/launcher_widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#000000"
-    android:gravity="center_vertical|start"
     android:orientation="vertical"
     android:paddingStart="22dp"
     android:paddingEnd="14dp"
     android:paddingTop="44dp"
-    android:paddingBottom="28dp">
+    android:paddingBottom="10dp">
 
-    <ImageView
-        android:layout_width="88dp"
-        android:layout_height="88dp"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="miniTools Launcher"
-        android:src="@drawable/minitools_brand" />
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/launcher_widget_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:fontFamily="@font/poppins_black"
+            android:text="LAUNCHER"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/launcher_widget_order"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:fontFamily="@font/poppins_black"
+            android:letterSpacing="0.045"
+            android:paddingStart="16dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="A–Z"
+            android:textColor="#94FFFFFF"
+            android:textSize="11sp" />
+    </RelativeLayout>
+
+    <GridView
+        android:id="@+id/launcher_widget_grid"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:horizontalSpacing="4dp"
+        android:verticalSpacing="12dp"
+        android:numColumns="4"
+        android:stretchMode="columnWidth"
+        android:listSelector="@android:color/transparent" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/launcher_widget_empty"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/poppins_black"
-        android:text="LAUNCHER"
-        android:textColor="#FFFFFF"
-        android:textSize="20sp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:fontFamily="@font/poppins_black"
-        android:letterSpacing="0.045"
-        android:text="EVERY APP, ON THE COVER SCREEN"
-        android:textColor="#9EFFFFFF"
-        android:textSize="11sp" />
+        android:text="NOTHING TO LAUNCH"
+        android:textColor="#59FFFFFF"
+        android:textSize="11sp"
+        android:visibility="gone" />
 </LinearLayout>

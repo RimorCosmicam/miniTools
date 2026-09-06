@@ -76,6 +76,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Feeds the launcher widget's grid. -->
+        <service
+            android:name=".LauncherWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS"
+            android:exported="false" />
+
         <!-- Owns the two invisible gesture zones on the cover panel. -->
         <service
             android:name=".ToolsService"

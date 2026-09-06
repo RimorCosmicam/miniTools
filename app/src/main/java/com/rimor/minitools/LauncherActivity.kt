@@ -144,7 +144,10 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
                     modifier = Modifier
                         .weight(1f)
                         .combinedClickable(
-                            onClick = { order = order.next().also { prefs.sortOrder = it } },
+                            onClick = {
+                                order = order.next().also { prefs.sortOrder = it }
+                                LauncherWidgetProvider.refresh(context)
+                            },
                             onLongClick = { menu = Menu.Settings },
                         )
                         .padding(vertical = 6.dp),
@@ -183,11 +186,19 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
                 MontRow(
                     label = "Background",
                     value = if (background) "on" else "off",
-                ) { background = !background; prefs.launcherBackground = background }
+                ) {
+                    background = !background
+                    prefs.launcherBackground = background
+                    LauncherWidgetProvider.refresh(context)
+                }
                 MontRow(
                     label = "Title",
                     value = if (title) "on" else "off",
-                ) { title = !title; prefs.launcherTitle = title }
+                ) {
+                    title = !title
+                    prefs.launcherTitle = title
+                    LauncherWidgetProvider.refresh(context)
+                }
                 MontRow(label = "Hidden apps", value = "${hidden.size}") { menu = Menu.Hidden }
                 if (order == SortOrder.USED && !UsageAccess.granted(context)) {
                     MontRow(label = "Usage access — grant", dim = true, onClick = onUsageAccess)
@@ -206,6 +217,7 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
                     hiddenApps.forEach { app ->
                         MontRow(label = app.label, value = "show") {
                             hidden = (hidden - app.packageName).also { prefs.hidden = it }
+                            LauncherWidgetProvider.refresh(context)
                         }
                     }
                 }
@@ -218,10 +230,12 @@ private fun LauncherScreen(onUsageAccess: () -> Unit, onClose: () -> Unit) {
                 MontRow(label = if (starred) "Unfavourite" else "Favourite") {
                     favourites = (if (starred) favourites - app.packageName else favourites + app.packageName)
                         .also { prefs.favourites = it }
+                    LauncherWidgetProvider.refresh(context)
                     menu = Menu.None
                 }
                 MontRow(label = "Hide") {
                     hidden = (hidden + app.packageName).also { prefs.hidden = it }
+                    LauncherWidgetProvider.refresh(context)
                     menu = Menu.None
                 }
                 MontRow(label = "Cancel", dim = true) { menu = Menu.None }

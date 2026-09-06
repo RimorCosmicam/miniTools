@@ -17,7 +17,10 @@ density. Nothing is drawn, imitated or reskinned; the real one is simply asked t
 appear somewhere it never gets asked. Two ways in, your choice of either or both:
 swipe up from the bottom-left corner, or press and hold the flash.
 
-**Launcher** — every app on the phone, in a grid on the cover screen. The word
+**Launcher** — every app on the phone, in a grid on the cover screen. Its Good
+Lock widget *is* the grid, not a card that opens one: on a cover screen the
+widget carousel is the home screen, and a card there costs a swipe and a tap to
+say the tool's name. The word
 top left, the order top right — A–Z, Z–A, NEW, USED — and tapping the order
 cycles it. Hold an app to favourite or hide it; favourites lead every order and
 are still sorted among themselves, so starring something never scrambles the sort
