@@ -130,14 +130,6 @@ gh run download <run-id> -R RimorCosmicam/miniTools -n minitools-debug-apk
 The workflow runs the unit tests first, so a green run is one where the gesture
 zones still contain every tap they were measured from.
 
-## The family
-
-[MontUI](https://github.com/RimorCosmicam/Mont) is the language it is written in.
-[MiniMate](https://github.com/RimorCosmicam/miniMate) ·
-[MiniDex](https://github.com/RimorCosmicam/miniDex) ·
-[miniMont](https://github.com/RimorCosmicam/miniMont) ·
-[miniPape](https://github.com/RimorCosmicam/miniPape)
-
 ## Open source
 
 MIT. Do what you like with it (but let me know, I love cool stuff).
