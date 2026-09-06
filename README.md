@@ -128,6 +128,10 @@ gh run download <run-id> -R RimorCosmicam/miniTools -n minitools-debug-apk
 The workflow runs the unit tests first, so a green run is one where the gesture
 zones still contain every tap they were measured from.
 
+Release builds are signed with a key held in the repository's secrets and never
+committed. Without that secret — a fork, a clone — the release build falls back
+to the debug key, so it still builds and still installs.
+
 ## Open source
 
 MIT. Do what you like with it (but let me know, I love cool stuff).

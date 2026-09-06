@@ -21,6 +21,10 @@ android {
         compose = true
     }
 
+    // The release key never lives in the repository. CI writes it out of a secret; a machine
+    // without that secret falls back to the debug key, so cloning and building still works.
+    val releaseStore = System.getenv("MINITOOLS_KEYSTORE")?.let(::file)?.takeIf { it.exists() }
+
     signingConfigs {
         getByName("debug") {
             storeFile = rootProject.file("debug.keystore")
@@ -28,14 +32,22 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (releaseStore != null) {
+            create("release") {
+                storeFile = releaseStore
+                storePassword = System.getenv("MINITOOLS_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("MINITOOLS_KEY_ALIAS")
+                keyPassword = System.getenv("MINITOOLS_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
-        // Signed with the same key as debug so a release build is something you can actually
-        // install, rather than an unsigned artifact nobody can put on a phone.
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("debug")
+            // Signed either way, so a release build is always something you can actually install
+            // rather than an unsigned artifact nobody can put on a phone.
+            signingConfig = signingConfigs.getByName(if (releaseStore != null) "release" else "debug")
         }
     }
 
