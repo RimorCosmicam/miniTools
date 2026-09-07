@@ -26,7 +26,7 @@ jobs:
       - name: Unit tests
         run: gradle :app:testFullDebugUnitTest
       - name: Build debug APK
-        run: gradle :app:assembleFullDebug
+        run: gradle :app:assembleFullDebug :app:assembleNorotateDebug
       - name: Write the release keystore
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -49,7 +49,9 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: minitools-debug-apk
-          path: app/build/outputs/apk/full/debug/app-full-debug.apk
+          path: |
+            app/build/outputs/apk/full/debug/app-full-debug.apk
+            app/build/outputs/apk/norotate/debug/app-norotate-debug.apk
       - uses: actions/upload-artifact@v6
         with:
           name: minitools-apk
