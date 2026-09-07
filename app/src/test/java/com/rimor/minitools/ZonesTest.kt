@@ -27,9 +27,26 @@ class ZonesTest {
     private val backButtonLeftEdge = 90
     private val navButtonCentres = listOf(163 to 996, 310 to 996)
 
+    /**
+     * Samsung's cover launcher puts its aspect-ratio button at this rectangle for apps it
+     * launched, and an accessibility overlay sits above it — so covering it makes the button
+     * unpressable for as long as miniTools is installed.
+     */
     @Test
-    fun `flash zone contains every measured flash tap`() {
-        flashTaps.forEach { (x, y) ->
+    fun `flash zone leaves the aspect-ratio button alone`() {
+        val button = Zone(left = 426, top = 952, right = 522, bottom = 1048)
+        assertFalse("flash zone covers the aspect-ratio button", Zones.FLASH.overlaps(button))
+    }
+
+    /**
+     * The zone stops short of that button, so the lowest of the measured taps now fall outside
+     * it. Everything above the floor must still land.
+     */
+    @Test
+    fun `flash zone contains every measured tap above its floor`() {
+        val above = flashTaps.filter { (_, y) -> y <= Zones.FLASH.bottom }
+        assertTrue("the button left no usable flash zone at all", above.size >= 8)
+        above.forEach { (x, y) ->
             assertTrue("flash tap ($x, $y) fell outside the zone", Zones.FLASH.contains(x, y))
         }
     }

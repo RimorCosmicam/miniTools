@@ -34,11 +34,12 @@ object Zones {
      * x 444..501, y 916..980 — a cluster 57 x 64 wide, sitting just inside the cutout's left
      * edge, which begins at x 428.
      *
-     * Margin here is free. Nothing else on the phone can use this rectangle, and a tap that
-     * strays right onto the lenses, where the digitiser reports nothing, is simply lost rather
-     * than delivered somewhere wrong.
+     * Margin is not free below, though. Samsung's cover launcher puts its aspect-ratio button at
+     * Rect(426, 952 - 522, 1048) for apps it launched, and an accessibility overlay sits above it
+     * — so a zone reaching to the bottom of the panel swallows that button entirely and there is
+     * no way to press it while miniTools is installed. The zone stops at 950, two pixels clear.
      */
-    val FLASH = Zone(left = 416, top = 868, right = 560, bottom = 1048)
+    val FLASH = Zone(left = 416, top = 868, right = 560, bottom = 950)
 
     /**
      * The bottom-left corner, for the swipe up — and nothing else's.
