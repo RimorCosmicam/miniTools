@@ -150,9 +150,11 @@ private fun ColumnScope.TourStep(onOkay: () -> Unit) {
     TourLine("THE FLASH", "Press and hold the dot beside the lenses")
     Spacer(Modifier.height(4.dp))
     Detail("Each opens a tool, and which does what is yours to change later.")
-    Spacer(Modifier.height(6.dp))
-    Label("ONE THING TO KNOW", .55f, 11)
-    Detail("Auto-rotate breaks the Recents interface — Samsung saves the panel's insets while it is sideways and keeps using them. Opening Recents on the inner screen fixes it, and miniTools has a Repair row that does exactly that. A reboot also works.")
+    if (BuildConfig.HAS_ROTATION) {
+        Spacer(Modifier.height(6.dp))
+        Label("ONE THING TO KNOW", .55f, 11)
+        Detail("Auto-rotate breaks the Recents interface — Samsung saves the panel's insets while it is sideways and keeps using them. Opening Recents on the inner screen fixes it, and miniTools has a Repair row that does exactly that. A reboot also works.")
+    }
     Spacer(Modifier.height(4.dp))
     Text(
         "OKAY",

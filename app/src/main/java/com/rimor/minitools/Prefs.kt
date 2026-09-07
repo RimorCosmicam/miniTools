@@ -37,12 +37,30 @@ class Prefs(context: Context) {
 
     private fun key(gesture: Gesture) = KEY_ACTION_PREFIX + gesture.name
 
-    private fun defaultAction(gesture: Gesture): Action = when (gesture) {
-        Gesture.TAP -> Action.LAUNCHER
-        Gesture.DOUBLE_TAP -> Action.ROTATE
-        Gesture.HOLD -> Action.RECENTS
-        Gesture.SWIPE_UP -> Action.RECENTS
-    }
+    /**
+     * Defaults follow the shape of the hand, and differ between the two builds.
+     *
+     * With rotation present, a tap opens the launcher and rotation sits behind the deliberate
+     * double tap where it will not be hit by accident. Without it, the launcher moves to the
+     * double tap and a single tap does nothing at all — the flash sits where a thumb rests, and a
+     * build with a spare gesture should spend it on doing nothing rather than on a surprise.
+     */
+    private fun defaultAction(gesture: Gesture): Action =
+        if (BuildConfig.HAS_ROTATION) {
+            when (gesture) {
+                Gesture.TAP -> Action.LAUNCHER
+                Gesture.DOUBLE_TAP -> Action.ROTATE
+                Gesture.HOLD -> Action.RECENTS
+                Gesture.SWIPE_UP -> Action.RECENTS
+            }
+        } else {
+            when (gesture) {
+                Gesture.TAP -> Action.NONE
+                Gesture.DOUBLE_TAP -> Action.LAUNCHER
+                Gesture.HOLD -> Action.RECENTS
+                Gesture.SWIPE_UP -> Action.RECENTS
+            }
+        }
 
     var cornerSwipe: Boolean
         get() = store.getBoolean(KEY_CORNER, true)

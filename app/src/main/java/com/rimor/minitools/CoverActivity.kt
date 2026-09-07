@@ -166,8 +166,10 @@ private fun Home(prefs: Prefs, granted: Boolean, onOpen: (Screen) -> Unit) {
     MontRow(label = "Recents", value = summary(prefs, Action.RECENTS), enabled = granted) {
         onOpen(Screen.RECENTS)
     }
-    MontRow(label = "Rotate", value = summary(prefs, Action.ROTATE), enabled = granted) {
-        onOpen(Screen.ROTATE)
+    if (BuildConfig.HAS_ROTATION) {
+        MontRow(label = "Rotate", value = summary(prefs, Action.ROTATE), enabled = granted) {
+            onOpen(Screen.ROTATE)
+        }
     }
     MontRow(label = "Flash shortcuts", value = "set", enabled = granted) {
         onOpen(Screen.SHORTCUTS)
@@ -186,7 +188,7 @@ private fun Home(prefs: Prefs, granted: Boolean, onOpen: (Screen) -> Unit) {
 
 @Composable
 private fun ShortcutsPage(prefs: Prefs, onChange: () -> Unit) {
-    val actions = Action.entries.toList()
+    val actions = Action.assignable
     // The corner swipe sits with them because it is the same question — what does this do — and
     // splitting it onto its own page would only hide one answer from the other three.
     listOf(

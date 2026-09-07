@@ -28,6 +28,14 @@ The only permission it asks for is the accessibility service, which is what give
 an ordinary app a window that outlives its own activity and sits over the cover
 screen. It reads no window content.
 
+## Two builds
+
+`miniTools.apk` has all three tools. `miniTools-norotate.apk` has the first two
+and no rotation at all — the code is absent rather than switched off, so nothing
+can turn it on by accident and the switcher's layout can never be broken by it.
+
+In that build a single tap does nothing and two taps open the launcher.
+
 ## Getting it on the cover screen
 
 Settings → Cover screen → Widgets, and add miniTools like any other cover screen

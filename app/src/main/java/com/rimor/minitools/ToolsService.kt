@@ -204,7 +204,7 @@ class ToolsService : AccessibilityService() {
         when (action) {
             Action.RECENTS -> openRecents()
             Action.LAUNCHER -> openLauncher()
-            Action.ROTATE -> toggleRotation()
+            Action.ROTATE -> if (BuildConfig.HAS_ROTATION) toggleRotation()
             Action.NONE -> Unit
         }
     }

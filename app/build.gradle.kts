@@ -19,6 +19,23 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    // Two builds from one source. Rotation is the only tool with a cost — it breaks the
+    // switcher's layout until repaired — so there is a build without it, where the code is not
+    // merely switched off but absent, and nothing can turn it on by accident.
+    flavorDimensions += "tools"
+    productFlavors {
+        create("full") {
+            dimension = "tools"
+            buildConfigField("boolean", "HAS_ROTATION", "true")
+        }
+        create("norotate") {
+            dimension = "tools"
+            buildConfigField("boolean", "HAS_ROTATION", "false")
+            versionNameSuffix = "-norotate"
+        }
     }
 
     // The release key never lives in the repository. CI writes it out of a secret; a machine

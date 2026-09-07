@@ -24,9 +24,9 @@ jobs:
         with:
           gradle-version: "9.4.1"
       - name: Unit tests
-        run: gradle :app:testDebugUnitTest
+        run: gradle :app:testFullDebugUnitTest
       - name: Build debug APK
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleFullDebug
       - name: Write the release keystore
         env:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -41,14 +41,18 @@ jobs:
           MINITOOLS_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           MINITOOLS_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           MINITOOLS_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: gradle :app:assembleRelease
-      - name: Name the release APK
-        run: cp app/build/outputs/apk/release/app-release.apk miniTools.apk
+        run: gradle :app:assembleFullRelease :app:assembleNorotateRelease
+      - name: Name the release APKs
+        run: |
+          cp app/build/outputs/apk/full/release/app-full-release.apk miniTools.apk
+          cp app/build/outputs/apk/norotate/release/app-norotate-release.apk miniTools-norotate.apk
       - uses: actions/upload-artifact@v6
         with:
           name: minitools-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/full/debug/app-full-debug.apk
       - uses: actions/upload-artifact@v6
         with:
           name: minitools-apk
-          path: miniTools.apk
+          path: |
+            miniTools.apk
+            miniTools-norotate.apk
