@@ -149,7 +149,9 @@ Every one of them is inside the cutout rectangle, which is the point. The flash
 sits just inside the island's left edge — the lenses are to its right and report
 nothing.
 
-Zone shipped: **(416, 868) – (560, 1048)**. That is the cluster with roughly a
+Zone shipped: **(416, 868) – (560, 950)**. It stops short of Samsung's
+aspect-ratio button at (426, 952) – (522, 1048), shown for apps its cover launcher
+opened, which an accessibility overlay would otherwise cover. That is the cluster with roughly a
 finger of margin on every side. Margin is free here: no other window on the phone
 can be given this rectangle.
 
@@ -279,6 +281,9 @@ Whichever window is higher in the z-order takes the touch. miniTools currently
 sits above both, so it wins, but nothing guarantees that ordering and two apps
 racing for one rectangle is not a state either of them can resolve. If the
 gestures ever stop responding, this is the first thing to look at.
+
+All zones are stored against the stock 948 × 1048 panel and scaled to the
+current resolution at runtime; density does not move them.
 
 `ZonesTest` asserts that every tap above still lands in the zone it was measured
 from, that neither zone runs off the panel, that they do not overlap, and that

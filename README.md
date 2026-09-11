@@ -22,7 +22,9 @@ Built for the Galaxy Z Flip 7 FlexWindow.
 
 Everything is reached from the flash. One tap, two taps and a hold are yours to
 assign, plus a swipe up from the bottom-left corner. Nothing is drawn over either
-spot: they are places on the panel, not buttons.
+spot: they are places on the panel, not buttons. A gesture set to nothing has no
+zone at all, and switching miniTools off in the app removes every one. The zones
+are measured on the stock 948 × 1048 panel and follow a custom resolution.
 
 The only permission it asks for is the accessibility service, which is what gives
 an ordinary app a window that outlives its own activity and sits over the cover

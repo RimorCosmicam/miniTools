@@ -6,9 +6,8 @@ import android.content.SharedPreferences
 /**
  * What the user chose, and nothing else.
  *
- * Both gestures are on out of the box. They do not overlap — opposite corners of the panel,
- * different actions — so there is no reason to make somebody pick one before the app does
- * anything, and either can be turned off once they know which one their thumb prefers.
+ * Every gesture has a default action, so the app does something the moment the service is on.
+ * Setting a gesture to Nothing removes its zone rather than leaving it idle.
  */
 class Prefs(context: Context) {
 
@@ -62,13 +61,13 @@ class Prefs(context: Context) {
             }
         }
 
-    var cornerSwipe: Boolean
-        get() = store.getBoolean(KEY_CORNER, true)
-        set(value) = store.edit().putBoolean(KEY_CORNER, value).apply()
-
-    var flashPress: Boolean
-        get() = store.getBoolean(KEY_FLASH, true)
-        set(value) = store.edit().putBoolean(KEY_FLASH, value).apply()
+    /**
+     * The off switch. Off, the service keeps running — it has to, to be switched back on — but it
+     * holds no zones, no rotation and no launcher card, so nothing on the cover screen is touched.
+     */
+    var enabled: Boolean
+        get() = store.getBoolean(KEY_ENABLED, true)
+        set(value) = store.edit().putBoolean(KEY_ENABLED, value).apply()
 
     /** Whether the first run has been seen. The tour is the only place the gestures are named. */
     var onboarded: Boolean
@@ -161,8 +160,7 @@ class Prefs(context: Context) {
 
     private companion object {
         const val NAME = "minitools"
-        const val KEY_CORNER = "gesture_corner_swipe"
-        const val KEY_FLASH = "gesture_flash_press"
+        const val KEY_ENABLED = "enabled"
         const val KEY_HAPTICS = "haptics"
         const val KEY_ONBOARDED = "onboarded"
         const val KEY_SORT = "launcher_sort"

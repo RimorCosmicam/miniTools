@@ -4,6 +4,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import androidx.compose.runtime.DisposableEffect
+import android.os.Looper
+import android.os.Handler
+import android.database.ContentObserver
 import android.provider.Settings
 import android.text.TextUtils
 import androidx.activity.ComponentActivity
@@ -41,10 +45,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 /**
  * The toolbox.
  *
- * One screen, one list, no header naming the panel — it opened from the widget you tapped, so
- * the first line is already an option. Recents is the only tool that does anything in V1; the
- * ones below it are named and sitting at 35% because a toolbox that hides what it will be is
- * harder to read than one that admits it.
+ * One screen: the off switch, the tools, and the page where each one is set up.
  */
 class CoverActivity : ComponentActivity() {
 
@@ -60,6 +61,22 @@ class CoverActivity : ComponentActivity() {
                 LifecycleResumeEffect(Unit) {
                     granted = isServiceEnabled(this@CoverActivity)
                     onPauseOrDispose { }
+                }
+                // Resume alone misses it: an activity on the cover can stay resumed while Settings
+                // is open, and never hears that the service was switched on. So the setting itself
+                // is watched.
+                DisposableEffect(Unit) {
+                    val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                        override fun onChange(selfChange: Boolean) {
+                            granted = isServiceEnabled(this@CoverActivity)
+                        }
+                    }
+                    contentResolver.registerContentObserver(
+                        Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
+                        false,
+                        observer,
+                    )
+                    onDispose { contentResolver.unregisterContentObserver(observer) }
                 }
                 var onboarded by remember { mutableStateOf(prefs.onboarded) }
 
@@ -87,7 +104,10 @@ class CoverActivity : ComponentActivity() {
     private fun openAccessibilitySettings() {
         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        runCatching { startActivity(intent) }
+        // On the cover, or it opens on the inner display — which you cannot see while folded.
+        val options = android.app.ActivityOptions.makeBasic()
+            .apply { launchDisplayId = CoverDisplay.idOrDefault(this@CoverActivity) }
+        runCatching { startActivity(intent, options.toBundle()) }
     }
 }
 
@@ -160,6 +180,12 @@ private fun Toolbox(granted: Boolean, onGrant: () -> Unit, onLauncher: () -> Uni
 /** The list. Every tool, and the page that configures it. */
 @Composable
 private fun Home(prefs: Prefs, granted: Boolean, onOpen: (Screen) -> Unit) {
+    var on by remember { mutableStateOf(prefs.enabled) }
+    MontToggleRow(label = "miniTools", on = on, enabled = granted) {
+        on = it; prefs.enabled = it
+    }
+    if (!on) MontDetail("Off. Every zone is removed until this is on again.")
+    MontGap()
     MontRow(label = "Launcher", value = summary(prefs, Action.LAUNCHER), enabled = granted) {
         onOpen(Screen.LAUNCHER)
     }

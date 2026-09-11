@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.PixelFormat
+import android.hardware.display.DisplayManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.Display
@@ -29,6 +30,24 @@ class ToolsService : AccessibilityService() {
     private var windows: WindowManager? = null
     private var corner: View? = null
     private var flash: View? = null
+
+    /** The gestures each zone was built for; a change of assignment rebuilds it. */
+    private var cornerGestures: Set<Gesture> = emptySet()
+    private var flashGestures: Set<Gesture> = emptySet()
+
+    /** The upright panel size the zones were last laid out against. */
+    private var laidOutFor: Pair<Int, Int>? = null
+
+    /** A change of resolution moves every zone, so they are laid out again when it happens. */
+    private val displayChanged = object : DisplayManager.DisplayListener {
+        override fun onDisplayChanged(displayId: Int) {
+            if (displayId == coverDisplay?.displayId) syncZones()
+        }
+
+        override fun onDisplayAdded(displayId: Int) = Unit
+
+        override fun onDisplayRemoved(displayId: Int) = Unit
+    }
 
     private var launcher: OverlayHost? = null
 
@@ -88,12 +107,14 @@ class ToolsService : AccessibilityService() {
         windows = createDisplayContext(display)
             .createWindowContext(display, WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY, null)
             .getSystemService(WindowManager::class.java)
+        getSystemService(DisplayManager::class.java)?.registerDisplayListener(displayChanged, handler)
         syncZones()
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(giveUp)
         runCatching { unregisterReceiver(packagesChanged) }
+        runCatching { getSystemService(DisplayManager::class.java)?.unregisterDisplayListener(displayChanged) }
         launcher?.dismiss()
         MontToast.dismiss()
         if (prefs.densityApplied) restoreDensity()
@@ -132,31 +153,52 @@ class ToolsService : AccessibilityService() {
 
     // ---- the zones ----------------------------------------------------------------------
 
+    /**
+     * Build exactly the zones that have something to do, at the size the panel is now.
+     *
+     * A zone with no action assigned does not exist: an invisible window that takes touches and
+     * does nothing is the worst thing this app could leave on a screen. Switched off, there are
+     * none at all. The flash zone is also built for only the gestures it carries, so a single tap
+     * does not wait to see whether a double tap follows when no double tap is assigned.
+     */
     private fun syncZones() {
         if (windows == null) return
-        corner = reconcile(
-            existing = corner,
-            wanted = prefs.cornerSwipe,
-            zone = Zones.CORNER,
-            gestures = setOf(Gesture.SWIPE_UP),
-        )
-        flash = reconcile(
-            existing = flash,
-            wanted = prefs.flashPress,
-            zone = Zones.FLASH,
-            gestures = setOf(Gesture.TAP, Gesture.DOUBLE_TAP, Gesture.HOLD),
-        )
+        val on = prefs.enabled
+        val (w, h) = uprightPanelSize()
+        val wantedFlash =
+            if (on) FLASH_GESTURES.filterTo(mutableSetOf()) { prefs.actionFor(it) != Action.NONE } else emptySet()
+        val wantedCorner =
+            if (on && prefs.actionFor(Gesture.SWIPE_UP) != Action.NONE) setOf(Gesture.SWIPE_UP) else emptySet()
+        val relayout = (w to h) != laidOutFor
+
+        if (relayout || wantedFlash != flashGestures) {
+            removeZone(flash)
+            flash = if (wantedFlash.isEmpty()) null else addZone(Zones.FLASH.scaledTo(w, h), wantedFlash)
+            flashGestures = wantedFlash
+        }
+        if (relayout || wantedCorner != cornerGestures) {
+            removeZone(corner)
+            corner = if (wantedCorner.isEmpty()) null else addZone(Zones.CORNER.scaledTo(w, h), wantedCorner)
+            cornerGestures = wantedCorner
+        }
+        laidOutFor = w to h
+
+        if (!on) {
+            dropRotation()
+            launcher?.dismiss()
+            launcher = null
+        }
     }
 
-    private fun reconcile(
-        existing: View?,
-        wanted: Boolean,
-        zone: Zone,
-        gestures: Set<Gesture>,
-    ): View? {
-        if (wanted && existing == null) return addZone(zone, gestures)
-        if (!wanted && existing != null) removeZone(existing)
-        return if (wanted) existing else null
+    /**
+     * The cover panel's size now, turned upright. Now rather than physical, so a custom
+     * resolution is honoured; upright, so a rotation is not mistaken for one.
+     */
+    private fun uprightPanelSize(): Pair<Int, Int> {
+        val bounds = windows?.maximumWindowMetrics?.bounds
+        val w = bounds?.width() ?: CoverDisplay.WIDTH_PX
+        val h = bounds?.height() ?: CoverDisplay.HEIGHT_PX
+        return if (w > h) h to w else w to h
     }
 
     private fun addZone(zone: Zone, gestures: Set<Gesture>): View? {
@@ -198,6 +240,7 @@ class ToolsService : AccessibilityService() {
     // ---- what a gesture does ------------------------------------------------------------
 
     private fun dispatch(gesture: Gesture) {
+        if (!prefs.enabled) return
         val action = prefs.actionFor(gesture)
         if (action == Action.NONE) return
         if (prefs.haptics) tick()
@@ -245,12 +288,26 @@ class ToolsService : AccessibilityService() {
      */
     private fun openLauncher() {
         val display = coverDisplay ?: return
-        val host = launcher ?: OverlayHost(this, display).also { launcher = it }
-        if (host.isShowing) {
-            host.dismiss()
-            return
+        launcher?.let { open ->
+            launcher = null
+            if (open.isShowing) {
+                open.dismiss()
+                return
+            }
         }
-        host.show { MiniToolsTheme { LauncherOverlay(onDismiss = { host.dismiss() }) } }
+        // A new host every time. A host's lifecycle and saved state are spent when it is
+        // dismissed, and showing it again throws — which is why the launcher opened once and then
+        // only buzzed.
+        val host = OverlayHost(this, display)
+        val shown = host.show {
+            MiniToolsTheme {
+                LauncherOverlay(onDismiss = {
+                    host.dismiss()
+                    if (launcher === host) launcher = null
+                })
+            }
+        }
+        if (shown) launcher = host
     }
 
     private fun dropRotation() {
@@ -300,6 +357,8 @@ class ToolsService : AccessibilityService() {
 
     companion object {
         private const val RECENTS_PACKAGE = "com.sec.android.app.launcher"
+
+        private val FLASH_GESTURES = listOf(Gesture.TAP, Gesture.DOUBLE_TAP, Gesture.HOLD)
 
         /** Long enough for the switcher to appear, short enough not to strand the panel. */
         private const val GIVE_UP_MS = 8_000L

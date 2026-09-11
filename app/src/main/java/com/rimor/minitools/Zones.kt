@@ -1,5 +1,7 @@
 package com.rimor.minitools
 
+import kotlin.math.roundToInt
+
 /**
  * A rectangle on the cover panel, in pixels.
  *
@@ -15,6 +17,23 @@ data class Zone(val left: Int, val top: Int, val right: Int, val bottom: Int) {
 
     fun overlaps(other: Zone): Boolean =
         left < other.right && other.left < right && top < other.bottom && other.top < bottom
+
+    /**
+     * This zone, measured on the stock 948 x 1048 panel, placed on a panel of another size. A
+     * custom resolution scales the whole panel, so every edge scales with it; density does not
+     * move anything and is not involved.
+     */
+    fun scaledTo(width: Int, height: Int): Zone {
+        if (width == CoverDisplay.WIDTH_PX && height == CoverDisplay.HEIGHT_PX) return this
+        val sx = width.toDouble() / CoverDisplay.WIDTH_PX
+        val sy = height.toDouble() / CoverDisplay.HEIGHT_PX
+        return Zone(
+            left = (left * sx).roundToInt(),
+            top = (top * sy).roundToInt(),
+            right = (right * sx).roundToInt(),
+            bottom = (bottom * sy).roundToInt(),
+        )
+    }
 }
 
 /**

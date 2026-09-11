@@ -1,5 +1,6 @@
 package com.rimor.minitools
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -96,6 +97,34 @@ class ZonesTest {
             assertTrue("$zone runs off the right", zone.right <= CoverDisplay.WIDTH_PX)
             assertTrue("$zone runs off the bottom", zone.bottom <= CoverDisplay.HEIGHT_PX)
             assertTrue("$zone is empty", zone.width > 0 && zone.height > 0)
+        }
+    }
+
+    @Test
+    fun `zones are unchanged at the stock resolution`() {
+        assertEquals(Zones.FLASH, Zones.FLASH.scaledTo(CoverDisplay.WIDTH_PX, CoverDisplay.HEIGHT_PX))
+        assertEquals(Zones.CORNER, Zones.CORNER.scaledTo(CoverDisplay.WIDTH_PX, CoverDisplay.HEIGHT_PX))
+    }
+
+    /** A custom resolution scales the panel, so the flash is still under the same finger. */
+    @Test
+    fun `zones follow a custom resolution`() {
+        val half = Zones.FLASH.scaledTo(474, 524)
+        assertEquals(Zone(left = 208, top = 434, right = 280, bottom = 475), half)
+        flashTaps.filter { (_, y) -> y <= Zones.FLASH.bottom }.forEach { (x, y) ->
+            assertTrue("tap ($x, $y) lost at half resolution", half.contains(x / 2, y / 2))
+        }
+    }
+
+    @Test
+    fun `scaled zones stay on a scaled panel and apart`() {
+        listOf(720 to 796, 1080 to 1194, 474 to 524).forEach { (w, h) ->
+            val flash = Zones.FLASH.scaledTo(w, h)
+            val corner = Zones.CORNER.scaledTo(w, h)
+            listOf(flash, corner).forEach { z ->
+                assertTrue("$z runs off a ${w}x$h panel", z.left >= 0 && z.top >= 0 && z.right <= w && z.bottom <= h)
+            }
+            assertFalse("zones overlap at ${w}x$h", flash.overlaps(corner))
         }
     }
 
